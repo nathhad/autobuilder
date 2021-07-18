@@ -1,0 +1,229 @@
+#!/bin/bash
+
+# This is a full autobuild wrapper script for DM's ROOter
+# build script system. It assumes an already installed
+# and working 19076 build environment.
+
+# It will handle updating the build environment, and
+# then work its way through a build of all the
+# standard images. It also includes a lockfile
+# system to ensure that two instances don't
+# run at once. This lockfile is trapped so that
+# it still gets removed if the script exits
+# unexpectedly.
+
+# A list of images to build can be included as parameters;
+# otherwise the script will pull the list of all
+# available images from alllist.txt and build all.
+
+# The following variables can be changed to suit the
+# arrangement of the build server, and to allow building
+# from multiple build environments at a time. You should have
+# one autobuild script per build environment.
+
+PIDFILE="/tmp/autobuilder19.pid"				# Lock file to prevent multiple processes
+BUILDPART="/serve/rooter"					# Partition for build environment
+AUTODIR="/serve/rooter/autobuild"				# Location of the autobuild script and output file
+								# 	(should be outside the build environment itself)
+BUILDDIR="/serve/rooter/rooter19076"				# Location of the build environment
+BUILDOUTPUT="$AUTODIR/buildout19.txt"				# File name to stream build script output to
+BUILDERROR="$AUTODIR/builderr19.txt"				# File name to stream build script stderr to
+SERVEDIR="/serve/aturnofthenut.com/public/autobuilds"		# Location to push final finished images
+MINFREE="10000000"						# Min partition free space in 1K blocks (see man df)
+SUFFIX="-AB"							# Suffix to append to autobuilt file names
+
+splitout() {
+	# Used to output the same text to both log and standard output.
+        logger -t autobuilder "$*"
+        echo "$*"
+}
+
+cleanup() {
+	# Removes the pidfile if it's there.
+	[ -e $PIDFILE ] && rm -f $PIDFILE && splitout "Lock file has been removed."
+	splitout "Cleanup completed."
+}
+
+checkfree() {
+	# Checks current free space against min set above.
+	# Error out and cancel further operations if min gets too small.
+	CURFREEG=`df -h $BUILDPART | grep "dev" | awk '{print $4}'`
+	CURFREE=`df $BUILDPART | grep "dev" | awk '{print $4}'`
+	if [ $CURFREE -lt $MINFREE ] ; then
+		splitout "Free space below min setting - $CURFREEG free. Exiting."
+		exit 2
+	fi
+}
+
+pushimage() {
+	# This mostly duplicates the push19 script on the aturnofthenut server,
+	# Which is used to push an output file in the images
+	# directory straight into the autobuilds server folder,
+	# while appending -AB to the name.
+	# Input must be a single file, handle multiples before calling.
+
+	SOURCE="$BUILDDIR/images"
+
+	# Parse the filename.
+	FILE="$1"
+	FROOT=${FILE%.*}
+	FEXT=${FILE##*.}
+
+	# Move the file.
+	mv "$SOURCE/$1" "$SERVEDIR/$FROOT$SUFFIX.$FEXT"
+}
+
+splitout '_______________________________________________________________'
+splitout "Build started by user `whoami` at `date`"
+
+# Check to verify autobuilder script is not already running.
+
+if [ -e $PIDFILE ] ; then
+	splitout "Lock file exists; autobuilder already running. Exiting."
+	exit 1
+fi
+
+# We've confirmed this is the only copy running.
+# Set the lockfile, and trap exits to run cleanup.
+
+echo $$ > $PIDFILE && trap cleanup EXIT
+trap 'break && exit 1' INT TERM
+
+splitout "Lock file set. Pid is $$."
+
+# cd into the build root and update the git sources.
+
+if [ -d $BUILDDIR ] ; then
+	cd $BUILDDIR
+else
+	splitout "$BUILDDIR does not exist. Exiting."
+	exit 3
+fi
+
+splitout "Executing git pull."
+
+git pull
+
+if [ "$?" -ne "0" ] ; then
+	# Git pull failed.
+	splitout "Git pull failure."
+	exit 4
+else
+	splitout "Git pull successful."
+fi
+
+# Export the current build catalog, and assemble the list.
+
+BUILDCAT=`$BUILDDIR/build LIST`
+
+CATCOUNT=`echo "$BUILDCAT" | wc -w`
+
+splitout "There are $CATCOUNT routers in the build catalog."
+
+BUILDLIST=""
+
+if [ $# -gt "0" ] ; then
+	splitout "Build list given: $*"
+	for ROUTER in $* ; do
+		if [ `echo $BUILDCAT | grep -c "$ROUTER"` -gt "0" ] ; then
+			# Router in build list.
+			BUILDLIST="$BUILDLIST $ROUTER"
+		else
+			splitout "$ROUTER not in catalog."
+		fi
+	done
+	splitout "Final build list is: $BUILDLIST"
+else
+	splitout "No build list given, building full catalog."
+	BUILDLIST="$BUILDCAT"
+fi
+
+# Check for disk space above minimum before starting.
+
+checkfree
+
+splitout "Initial disk space check passed."
+splitout "Preparing the build loop ..."
+
+if [ -f $BUILDOUTPUT ] ; then rm -f $BUILDOUTPUT ; fi				# Flush output file
+if [ -f $BUILDERROR ] ; then rm -f $BUILDERROR ; fi				# Flush error file
+if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" ; fi	# Flush image folder
+
+echo "Build started at `date`" > $BUILDOUTPUT
+echo "Building:  $BUILDLIST" >> $BUILDOUTPUT
+echo "Building $TARGETCOUNT routers." >> $BUILDOUTPUT
+echo >> $BUILDOUTPUT
+
+ERRLIST=""
+ERRNUM="0"
+
+############################
+# Enter the main build loop.
+############################
+
+for ROUTER in $BUILDLIST ; do
+
+	splitout "Starting on $ROUTER."
+
+	# Prep the BUILDOUTPUT file:
+	echo "____________________" >> $BUILDOUTPUT
+	echo >> $BUILDOUTPUT
+	echo "Starting $ROUTER" >> $BUILDOUTPUT
+	echo >> $BUILDOUTPUT
+	echo "____________________" >> $BUILDOUTPUT
+	echo >> $BUILDOUTPUT
+
+	# Prep the BUILDERROR file:
+	echo "START ROUTER $ROUTER" >> $BUILDERROR
+
+	# Run the build script on the router.
+
+	$BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
+
+	RESULT=$?
+
+	echo "Return: $RESULT" >> $BUILDOUTPUT
+	echo >> $BUILDOUTPUT
+
+	# Check the result to see if build reported success.
+	if [ $RESULT -ne "0" ] ; then
+		# build reported a failure. Document and clean up.
+		splitout "Build of $ROUTER failed with result $RESULT. Flushing output images."
+		if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
+		ERRFILE="$AUTODIR/$ROUTER-`date -Idate`.err.txt"
+		echo "$ROUTER `date`" >> $ERRFILE
+		echo >> $ERRFILE
+		tail $BUILDERROR >> $ERRFILE
+		echo >> $ERRFILE
+		tail $BUILDOUTPUT >> $ERRFILE
+		echo >> $ERRFILE
+		splitout "Errors written to $ERRFILE"
+		let ERRNUM++
+		ERRLIST="$ERRLIST $ROUTER"
+	else
+		# build reported success!
+		splitout "$ROUTER built successfully."
+
+		# Push this image to the server folder.
+		# Following line automatically grabs first zip file in images,
+		# this should be the only zip file if all is well.
+		OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
+		pushimage "$OUTFILE"
+
+		# Check there are no extra images in the folder left over:
+
+		if [ `ls "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
+			# Leftover mystery images! This is basically a crash condition.
+			splitout "Too many images left in folder!"
+			exit 5
+		fi
+
+		# Report the success.
+		splitout "$OUTFILE pushed to $SERVEDIR"
+	fi
+	# Loop done - proceed to next router.
+done
+
+splitout "Build loop has finished at `date`!"
+splitout "Final buildlist: $BUILDLIST"
+splitout "$ERRNUM errors: $ERRLIST"
