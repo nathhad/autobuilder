@@ -27,8 +27,9 @@ BUILDPART="/serve/rooter"					# Partition for build environment
 AUTODIR="/serve/rooter/autobuild"				# Location of the autobuild script and output file
 								# 	(should be outside the build environment itself)
 BUILDDIR="/serve/rooter/rooter19076"				# Location of the build environment
-BUILDOUTPUT="$AUTODIR/output/buildout19.txt"				# File name to stream build script output to
-BUILDERROR="$AUTODIR/output/builderr19.txt"				# File name to stream build script stderr to
+BUILDOUTPUT="$AUTODIR/output/buildout19.txt"			# File name to stream build script output to
+BUILDERROR="$AUTODIR/output/builderr19.txt"			# File name to stream build script stderr to
+FLAGFILE="$AUTODIR/output/RUNNING"				# Empty file to show when script is running.
 SERVEDIR="/serve/aturnofthenut.com/public/autobuilds"		# Location to push final finished images
 MINFREE="10000000"						# Min partition free space in 1K blocks (see man df)
 SUFFIX="-AB"							# Suffix to append to autobuilt file names
@@ -42,6 +43,7 @@ splitout() {
 cleanup() {
 	# Removes the pidfile if it's there.
 	[ -e $PIDFILE ] && rm -f $PIDFILE && splitout "Lock file has been removed."
+	[ -f $FLAGFILE ] && rm -f $FLAGFILE
 	splitout "Cleanup completed."
 }
 
@@ -100,6 +102,8 @@ echo $$ > $PIDFILE && trap cleanup EXIT
 trap 'break && exit 1' INT TERM
 
 splitout "Lock file set. Pid is $$."
+
+touch $FLAGFILE
 
 # cd into the build root and update the git sources.
 
