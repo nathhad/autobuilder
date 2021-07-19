@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# This is a simple cron job to serve as an autobuild trigger.
+# This is meant to run as a cron job every five minutes, and
+# will trigger the build system based on a trigger file.
+# If the trigger file contains a list of routers, it will
+# run that list. Otherwise, it will trigger a full catalog
+# build.
+
+# Added 7/19/21: sequence number output. The trigger script
+# will redirect all stdout and stderr into a text file with
+# the sequence number, and pass that sequence number to the
+# build script for use in error files.
+
+TRIGGERFILE="/home/dairyman/abtrigger/go"
+LOCKFILE="/tmp/autobuilder19.pid"
+AUTODIR="/serve/rooter/autobuild"
+SEQFILE="$AUTODIR/sequence"
+
+if [ -f $TRIGGERFILE ] ; then
+	# User has requested an autobuild run.
+
+	# Check if sequence file exists; if not, start at 1.
+	if [ ! -f $SEQFILE ] ; then
+		logger -t autobuilder "Creating sequence file."
+		echo "1" > $SEQFILE
+	fi
+
+	# Grab the sequence number
+	SEQNO=`cat $SEQFILE`
+	SEQNEXT="$SEQNO"
+	let SEQNEXT++
+	echo $SEQNEXT > $SEQFILE
+
+	LIST=`tr '\n' ' ' < $TRIGGERFILE`
+	rm -f $TRIGGERFILE && logger - autobuilder "abtrigger: Trigger file found and removed"
+	# Above will import contents of the trigger file as a
+	# single space delimited line.
+	logger -t autobuilder "Sequence $SEQNO, trigger file list: $LIST"
+
+	# Check if autobuilder running; if so, wait.
+	while [ -f $LOCKFILE ] ; do
+		sleep 30
+	done
+	/home/builder/rooter/autobuild/autobuild19 $SEQNO $LIST &>$AUTODIR/output/$SEQNO.build.txt &
+	logger "abtrigger: autobuild19 sequence $SEQNO triggered with list: $LIST"
+fi
+
