@@ -222,8 +222,10 @@ for ROUTER in $BUILDLIST ; do
 		ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.err.txt"
 		echo "$ROUTER `date`" > $ERRFILE
 		echo >> $ERRFILE
+		echo "STDERR:" >> $ERRFILE
 		tail $BUILDERROR >> $ERRFILE
 		echo >> $ERRFILE
+		echo "STDOUT:" >> $ERRFILE
 		tail $BUILDOUTPUT >> $ERRFILE
 		echo >> $ERRFILE
 		splitout "Errors written to $ERRFILE"
