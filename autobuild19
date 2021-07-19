@@ -22,12 +22,13 @@
 # one autobuild script per build environment.
 
 PIDFILE="/tmp/autobuilder19.pid"				# Lock file to prevent multiple processes
+STOPFILE="/tmp/ab19stop"					# Cancel next loop of autobuilder
 BUILDPART="/serve/rooter"					# Partition for build environment
 AUTODIR="/serve/rooter/autobuild"				# Location of the autobuild script and output file
 								# 	(should be outside the build environment itself)
 BUILDDIR="/serve/rooter/rooter19076"				# Location of the build environment
-BUILDOUTPUT="$AUTODIR/buildout19.txt"				# File name to stream build script output to
-BUILDERROR="$AUTODIR/builderr19.txt"				# File name to stream build script stderr to
+BUILDOUTPUT="$AUTODIR/output/buildout19.txt"				# File name to stream build script output to
+BUILDERROR="$AUTODIR/output/builderr19.txt"				# File name to stream build script stderr to
 SERVEDIR="/serve/aturnofthenut.com/public/autobuilds"		# Location to push final finished images
 MINFREE="10000000"						# Min partition free space in 1K blocks (see man df)
 SUFFIX="-AB"							# Suffix to append to autobuilt file names
@@ -64,14 +65,23 @@ pushimage() {
 
 	SOURCE="$BUILDDIR/images"
 
+	# Check if $1 exists, otherwise exit.
+	if [ -z $1 ] ; then
+		splitout "No file passed to pushimage, exiting."
+		return 1
+	fi
+
 	# Parse the filename.
 	FILE="$1"
 	FROOT=${FILE%.*}
 	FEXT=${FILE##*.}
 
 	# Move the file.
-	mv "$SOURCE/$1" "$SERVEDIR/$FROOT$SUFFIX.$FEXT"
+	# Note: THIS WILL OVERWRITE if there is an existing file.
+	mv -f "$SOURCE/$1" "$SERVEDIR/$FROOT$SUFFIX.$FEXT"
 }
+
+is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
 
 splitout '_______________________________________________________________'
 splitout "Build started by user `whoami` at `date`"
@@ -112,6 +122,19 @@ else
 	splitout "Git pull successful."
 fi
 
+# Check if a sequence number was provided, if so store it
+# for use in numbering output files.
+SEQNO=""
+if [ $# -gt "0" ] ; then
+	splitout "Parameters received: $*"
+	if is_int $1 ; then
+	# first parameter is a sequence number
+	SEQNO="$1"
+	shift
+	splitout "Sequence number $SEQNO given."
+	fi
+fi
+
 # Export the current build catalog, and assemble the list.
 
 BUILDCAT=`$BUILDDIR/build LIST`
@@ -149,7 +172,7 @@ if [ -f $BUILDOUTPUT ] ; then rm -f $BUILDOUTPUT ; fi				# Flush output file
 if [ -f $BUILDERROR ] ; then rm -f $BUILDERROR ; fi				# Flush error file
 if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" ; fi	# Flush image folder
 
-echo "Build started at `date`" > $BUILDOUTPUT
+echo "Build $SEQNO started at `date`" > $BUILDOUTPUT
 echo "Building:  $BUILDLIST" >> $BUILDOUTPUT
 echo "Building $TARGETCOUNT routers." >> $BUILDOUTPUT
 echo >> $BUILDOUTPUT
@@ -162,6 +185,11 @@ ERRNUM="0"
 ############################
 
 for ROUTER in $BUILDLIST ; do
+
+	if [ -f $STOPFILE ] ; then
+		splitout "STOPFILE FOUND! Exiting."
+		exit 99
+	fi
 
 	splitout "Starting on $ROUTER."
 
@@ -177,8 +205,9 @@ for ROUTER in $BUILDLIST ; do
 	echo "START ROUTER $ROUTER" >> $BUILDERROR
 
 	# Run the build script on the router.
+	# We will nice this down by an additional 5 just in case.
 
-	$BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
+	nice -n 5 $BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
 
 	RESULT=$?
 
@@ -190,8 +219,8 @@ for ROUTER in $BUILDLIST ; do
 		# build reported a failure. Document and clean up.
 		splitout "Build of $ROUTER failed with result $RESULT. Flushing output images."
 		if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
-		ERRFILE="$AUTODIR/$ROUTER-`date -Idate`.err.txt"
-		echo "$ROUTER `date`" >> $ERRFILE
+		ERRFILE="$AUTODIR/output/$SEQNO$ROUTER-`date -Idate`.err.txt"
+		echo "$ROUTER `date`" > $ERRFILE
 		echo >> $ERRFILE
 		tail $BUILDERROR >> $ERRFILE
 		echo >> $ERRFILE
@@ -208,7 +237,19 @@ for ROUTER in $BUILDLIST ; do
 		# Following line automatically grabs first zip file in images,
 		# this should be the only zip file if all is well.
 		OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
+		splitout "Outfile is $OUTFILE"
+		if [ -z $OUTFILE ] ; then
+			# Outfile missing!
+			splitout "Outfile is missing!"
+			exit 6
+		fi
 		pushimage "$OUTFILE"
+		OUTRESULT="$?"
+		if [ $? -ne "0" ] ; then
+			# Pushimage reports error
+			splitout "pushimage error $OUTRESULT"
+			exit 7
+		fi
 
 		# Check there are no extra images in the folder left over:
 
@@ -224,6 +265,6 @@ for ROUTER in $BUILDLIST ; do
 	# Loop done - proceed to next router.
 done
 
-splitout "Build loop has finished at `date`!"
+splitout "Build loop $SEQNO has finished at `date`!"
 splitout "Final buildlist: $BUILDLIST"
 splitout "$ERRNUM errors: $ERRLIST"
