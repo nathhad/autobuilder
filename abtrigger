@@ -33,6 +33,7 @@ if [ -f $TRIGGERFILE ] ; then
 	echo $SEQNEXT > $SEQFILE
 
 	LIST=`tr '\n' ' ' < $TRIGGERFILE`
+	LIST=`echo ${LIST^^} | tr -d '\r'`
 	rm -f $TRIGGERFILE && logger - autobuilder "abtrigger: Trigger file found and removed"
 	# Above will import contents of the trigger file as a
 	# single space delimited line.
