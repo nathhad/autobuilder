@@ -12,10 +12,14 @@
 # the sequence number, and pass that sequence number to the
 # build script for use in error files.
 
-TRIGGERFILE="/home/dairyman/abtrigger/go"
-LOCKFILE="/tmp/autobuilder19.pid"
-AUTODIR="/serve/rooter/autobuild"
-SEQFILE="$AUTODIR/sequence"
+######
+#
+# IMPORTANT: you MUST edit the following line to point to the
+# config file you want to use for this instance of the script.
+#
+source /serve/rooter/autobuild/autobuild19.conf
+#
+######
 
 if [ -f $TRIGGERFILE ] ; then
 	# User has requested an autobuild run.
@@ -40,7 +44,7 @@ if [ -f $TRIGGERFILE ] ; then
 	logger -t autobuilder "abtrigger: Sequence $SEQNO, trigger file list: $LIST"
 
 	# Check if autobuilder running; if so, wait.
-	while [ -f $LOCKFILE ] ; do
+	while [ -f $PIDFILE ] ; do
 		sleep 30
 	done
 	/home/builder/rooter/autobuild/autobuild19 $SEQNO $LIST &>$AUTODIR/output/$SEQNO.build.txt &

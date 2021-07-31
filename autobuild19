@@ -16,23 +16,14 @@
 # otherwise the script will pull the list of all
 # available images from alllist.txt and build all.
 
-# The following variables can be changed to suit the
-# arrangement of the build server, and to allow building
-# from multiple build environments at a time. You should have
-# one autobuild script per build environment.
-
-PIDFILE="/tmp/autobuilder19.pid"				# Lock file to prevent multiple processes
-STOPFILE="/tmp/ab19stop"					# Cancel next loop of autobuilder
-BUILDPART="/serve/rooter"					# Partition for build environment
-AUTODIR="/serve/rooter/autobuild"				# Location of the autobuild script and output file
-								# 	(should be outside the build environment itself)
-BUILDDIR="/serve/rooter/rooter19076"				# Location of the build environment
-BUILDOUTPUT="$AUTODIR/output/buildout19.txt"			# File name to stream build script output to
-BUILDERROR="$AUTODIR/output/builderr19.txt"			# File name to stream build script stderr to
-FLAGFILE="$AUTODIR/output/RUNNING"				# Empty file to show when script is running.
-SERVEDIR="/serve/aturnofthenut.com/public/autobuilds"		# Location to push final finished images
-MINFREE="10000000"						# Min partition free space in 1K blocks (see man df)
-SUFFIX="-AB"							# Suffix to append to autobuilt file names
+######
+#
+# IMPORTANT: you MUST edit the following line to point to the
+# config file you want to use for this instance of the script.
+#
+source /serve/rooter/autobuild/autobuild19.conf
+#
+######
 
 splitout() {
 	# Used to output the same text to both log and standard output.
