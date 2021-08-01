@@ -76,6 +76,44 @@ pushimage() {
 
 is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
 
+success() {
+	# This function is called after each successful build, to handle
+	# getting the files into the right location. Pushing this code
+	# into a function allows better branch control to let us handle
+	# a first build failure without a lot of code duplication.
+
+        splitout "$ROUTER built successfully."
+
+        # Push this image to the server folder.
+        # Following line automatically grabs first zip file in images,
+        # this should be the only zip file if all is well.
+        OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
+        splitout "Outfile is $OUTFILE"
+        if [ -z $OUTFILE ] ; then
+                # Outfile missing!
+                splitout "Outfile is missing!"
+                exit 6
+        fi
+        pushimage "$OUTFILE"
+        OUTRESULT="$?"
+        if [ $? -ne "0" ] ; then
+                # Pushimage reports error
+                splitout "pushimage error $OUTRESULT"
+                exit 7
+        fi
+
+        # Check there are no extra images in the folder left over:
+
+        if [ `ls "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
+                # Leftover mystery images! This is basically a crash condition.
+                splitout "Too many images left in folder!"
+                exit 5
+        fi
+
+        # Report the success.
+        splitout "$OUTFILE pushed to $SERVEDIR"
+}
+
 splitout '_______________________________________________________________'
 splitout "Build started by user `whoami` at `date`"
 
@@ -173,6 +211,7 @@ echo "Building $TARGETCOUNT routers." >> $BUILDOUTPUT
 echo >> $BUILDOUTPUT
 
 ERRLIST=""
+RBLIST=""
 ERRNUM="0"
 
 ############################
@@ -211,7 +250,7 @@ for ROUTER in $BUILDLIST ; do
 
 	# Check the result to see if build reported success.
 	if [ $RESULT -ne "0" ] ; then
-		# build reported a failure. Document and clean up.
+		# build reported a failure on first try. Document and clean up.
 		splitout "Build of $ROUTER failed with result $RESULT. Flushing output images."
 		if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
 		ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.err.txt"
@@ -224,44 +263,48 @@ for ROUTER in $BUILDLIST ; do
 		tail $BUILDOUTPUT >> $ERRFILE
 		echo >> $ERRFILE
 		splitout "Errors written to $ERRFILE"
-		let ERRNUM++
-		ERRLIST="$ERRLIST $ROUTER"
+
+		# Try a make clean and rebuild once.
+		splitout "Cleaning the build environment."
+		make clean
+		splitout "Attempting a second build."
+		nice -n 5 $BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
+	        RESULT=$?
+
+		# Check results:
+		if [ $RESULT -ne "0" ] ; then
+			# build reported a failure the second time.
+			# Document and clean up again.
+			splitout "Clean reuild of $ROUTER failed with result $RESULT. Flushing output images."
+                	if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
+                	ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.rberr.txt"
+                	echo "$ROUTER `date`" > $ERRFILE
+                	echo >> $ERRFILE
+                	echo "STDERR:" >> $ERRFILE
+                	tail $BUILDERROR >> $ERRFILE
+                	echo >> $ERRFILE
+                	echo "STDOUT:" >> $ERRFILE
+                	tail $BUILDOUTPUT >> $ERRFILE
+                	echo >> $ERRFILE
+                	splitout "Errors written to $ERRFILE"
+
+			let ERRNUM++
+			ERRLIST="$ERRLIST $ROUTER"
+		else
+			# rebuild reported success!
+			RBLIST="$RBLIST $ROUTER"
+			success
+		fi
 	else
 		# build reported success!
-		splitout "$ROUTER built successfully."
-
-		# Push this image to the server folder.
-		# Following line automatically grabs first zip file in images,
-		# this should be the only zip file if all is well.
-		OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
-		splitout "Outfile is $OUTFILE"
-		if [ -z $OUTFILE ] ; then
-			# Outfile missing!
-			splitout "Outfile is missing!"
-			exit 6
-		fi
-		pushimage "$OUTFILE"
-		OUTRESULT="$?"
-		if [ $? -ne "0" ] ; then
-			# Pushimage reports error
-			splitout "pushimage error $OUTRESULT"
-			exit 7
-		fi
-
-		# Check there are no extra images in the folder left over:
-
-		if [ `ls "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
-			# Leftover mystery images! This is basically a crash condition.
-			splitout "Too many images left in folder!"
-			exit 5
-		fi
-
-		# Report the success.
-		splitout "$OUTFILE pushed to $SERVEDIR"
+		success
 	fi
 	# Loop done - proceed to next router.
 done
 
 splitout "Build loop $SEQNO has finished at `date`!"
 splitout "Final buildlist: $BUILDLIST"
-splitout "$ERRNUM errors: $ERRLIST"
+splitout "$ERRNUM unrecoverable errors: $ERRLIST"
+if [ $RBLIST != "" ] ; then
+	splitout "Clean rebuilds performed: $RBLIST"
+fi
