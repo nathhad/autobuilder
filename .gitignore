@@ -1,0 +1,3 @@
+# Standard ignore file for autobuilder project.
+output/
+sequence
