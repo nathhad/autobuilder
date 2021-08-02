@@ -114,6 +114,11 @@ success() {
         splitout "$OUTFILE pushed to $SERVEDIR"
 }
 
+############################
+# Start preparatory checks
+############################
+
+
 splitout '_______________________________________________________________'
 splitout "Build started by user `whoami` at `date`"
 
@@ -170,7 +175,7 @@ fi
 
 # Export the current build catalog, and assemble the list.
 
-BUILDCAT=`$BUILDDIR/build LIST`
+BUILDCAT=`$BUILDDIR/build LIST | tr '\n' ' '`
 
 CATCOUNT=`echo "$BUILDCAT" | wc -w`
 
