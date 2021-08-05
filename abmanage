@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# This is a management script to track updates in the build environment and
+# autobuild folder, including the option to generate lists of routers that
+# need a rebuild or are missing from autobuild.
+
+# This script is dependent upon jshon and the rooter build package.
+
+######
+#
+# IMPORTANT: you MUST edit the following line to point to the
+# config file you want to use for this instance of the script.
+#
+#source /serve/rooter/autobuild/autobuild19.conf
+#
+######
+
+is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
+
+abexecute() {
+	echo "Do the execute thing with: $*"
+}
+
+abhelp() {
+cat 1>&2 <<EndOfHelp
+Usage: abmanage [ -cep ] COMMAND [ parameter ]
+
+Options:
+
+   -c		Common routers only (per json instructions).
+
+   -e		Execute a build using the resulting router list.
+
+   -p		Perform a git pull before performing the command.
+
+Commands:
+
+   HELP		Display this usage message.
+
+   NEW		List routers which have no Autobuild images.
+
+   STALE days	List routers whose autobuild images are at least
+   		the given number of days old.
+
+   STATUS	List all routers in catalog, with summary of number
+   		of images, earliest, and latest.
+
+EndOfHelp
+exit 1
+}
+
+abnew() {
+	echo "Do the new thing."
+	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
+}
+
+abpull() {
+	echo "This would do a git pull here."
+}
+
+abstale() {
+	echo "Do the stale thing at $1 days."
+	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
+}
+
+abstatus() {
+	[ "$EXECUTE" -eq "0" ] && echo 1>&2 "STATUS command does not support -e flag." && abhelp
+	echo "Do the status thing."
+}
+
+COMMON=1	# All routers by default
+EXECUTE=1	# Do not execute by default.
+PULL=1		# Do not pull by default.
+OUTLIST="some sample routers"	# Start with blank output list.
+
+# Parse input flags.
+while getopts cep flag ; do
+	case "${flag}" in
+		c) COMMON=0 ;;
+		e) EXECUTE=0 ;;
+		p) PULL=0 ;;
+		"?") abhelp ;;
+	esac
+done
+
+shift $((OPTIND -1))
+
+# Check param count.
+if [ $# -lt 1 -o $# -gt 2 ] ; then
+	abhelp
+fi
+
+# Pull if requested
+[ "$PULL" -eq "0" ] && abpull
+
+# Sort on command.
+case "${1^^}" in
+	HELP) abhelp ;;
+	NEW) abnew ;;
+	STALE)
+		if [ $# -eq 2 ] ; then
+			is_int $2
+			if [ $? -eq "0" ] ; then
+				abstale "$2"
+			else
+				echo "Argument required: number of days (integer)"
+                        	abhelp
+			fi
+		else
+			echo "Argument required: number of days (integer)"
+	                abhelp
+		fi
+		;;
+	STATUS) abstatus ;;
+	*) abhelp ;;
+esac
+
