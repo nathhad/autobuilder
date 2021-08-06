@@ -58,6 +58,9 @@ Commands:
 
    NEW		List routers which have no Autobuild images.
 
+   PRUNE count	Prune older images if router has more than
+   		the given count available in server directory.
+
    STALE days	List routers whose autobuild images are at least
    		the given number of days old.
 
@@ -87,6 +90,37 @@ abnew() {
 
 	# If execute flag set, execute an autobuild based on the output list.
 	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
+}
+
+abprune() {
+	# For a given number of images to keep, prune any superfluous images
+	# over that number, starting with the oldest. Move the pruned images
+	# into the trash directory set in the conf file.
+	PTTL="0"
+
+	RLIST=$(jshon -k < $JSON)
+        for ROUTER in $RLIST
+        do
+                MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+                MOD="${MOD%\"}"
+                MOD=${MOD#\"}
+                COUNT=$(ls $SERVEDIR | grep -c "$MOD-GO")
+                if [ "$COUNT" -gt "$1" ] ; then
+                	# This router needs pruning. Make the list:
+                	PCOUNT=$(expr "$COUNT" - "$1")
+                	PLIST=$(ls $SERVEDIR | grep "$MOD-GO" | head -n "$PCOUNT")
+                	for PRUNEFILE in $PLIST ; do
+                		mv $SERVEDIR/$PRUNEFILE $TRASH/
+                	done
+
+                	# Files pruned for this router. Add to results list.
+                	OUTLIST="${OUTLIST}, ${ROUTER}: $PCOUNT"
+                	PTTL=$(expr "$PTTL" + "$PCOUNT")
+                fi
+        done
+
+        # Print a summary of results.
+        echo "Pruned $PTTL images: $OUTLIST"
 }
 
 abpull() {
