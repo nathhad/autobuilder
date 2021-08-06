@@ -96,6 +96,9 @@ abprune() {
 	# For a given number of images to keep, prune any superfluous images
 	# over that number, starting with the oldest. Move the pruned images
 	# into the trash directory set in the conf file.
+	# Error out if an execute flag was passed:
+        [ "$EXECUTE" -eq "0" ] && echo 1>&2 "PRUNE command does not support -e flag." && abhelp
+
 	PTTL="0"
 
 	RLIST=$(jshon -k < $JSON)
@@ -114,7 +117,8 @@ abprune() {
                 	done
 
                 	# Files pruned for this router. Add to results list.
-                	OUTLIST="${OUTLIST}, ${ROUTER}: $PCOUNT"
+			[ -n "$OUTLIST" ] && OUTLIST="${OUTLIST}, "
+                	OUTLIST="${OUTLIST}${ROUTER}: $PCOUNT"
                 	PTTL=$(expr "$PTTL" + "$PCOUNT")
                 fi
         done
@@ -258,6 +262,20 @@ fi
 case "${1^^}" in
 	HELP) abhelp ;;
 	NEW) abnew ;;
+	PRUNE)
+		if [ $# -eq 2 ] ; then
+			is_int $2
+			if [ $? -eq "0" ] ; then
+				abprune "$2"
+			else
+				echo "Argument required: number of images to keep (integer)"
+				abhelp
+			fi
+		else
+			echo "Argument required: number of images to keep (integer)"
+			abhelp
+		fi
+		;;
 	STALE)
 		if [ $# -eq 2 ] ; then
 			is_int $2
