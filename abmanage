@@ -11,14 +11,33 @@
 # IMPORTANT: you MUST edit the following line to point to the
 # config file you want to use for this instance of the script.
 #
-#source /serve/rooter/autobuild/autobuild19.conf
+CONF=/serve/rooter/autobuild/autobuild19.conf
+source $CONF
 #
 ######
 
 is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
 
+testdir() {
+	if [ -d $1 ] ; then
+		return 0
+	else
+		# Error - critical directory missing
+        	echo 1>&2 "Directory $1 missing!"
+        	echo 1>&2 "Check configuration file $CONF"
+        	exit 1
+        fi
+}
+
+extract_date() {
+        MYDATE=${1##*-GO}
+        MYDATE=${MYDATE%.zip}
+        MYDATE=${MYDATE%-AB}
+}
+
 abexecute() {
-	echo "Do the execute thing with: $*"
+	echo "Sending list $* to trigger file $TRIGGERFILE6"
+	echo "$*" >> $TRIGGERFILE
 }
 
 abhelp() {
@@ -50,28 +69,127 @@ exit 1
 }
 
 abnew() {
-	echo "Do the new thing."
+	# Go through the list of routers, and add any router to OUTLIST that
+	# doesn't have at least one image file in SERVEDIR.
+	RLIST=$(jshon -k < $JSON)
+	for ROUTER in $RLIST
+	do
+		MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+		MOD="${MOD%\"}"
+		MOD=${MOD#\"}
+		COUNT=$(ls $SERVEDIR | grep -c "$MOD-GO")
+		if [ ! "$COUNT" -gt "0" ] ; then
+			OUTLIST="$OUTLIST $ROUTER"
+		fi
+	done
+	# OUTLIST now contains routers with no images built
+	echo $OUTLIST
+
+	# If execute flag set, execute an autobuild based on the output list.
 	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
 }
 
 abpull() {
-	echo "This would do a git pull here."
+#	echo "Executing git pull of build environment:"
+	git pull &>/dev/null
+	if [ $? -ne "0" ] ; then
+		echo 1>&2 "Error during git pull, aborting."
+		exit 1
+	fi
 }
 
 abstale() {
-	echo "Do the stale thing at $1 days."
+        # Go through the list of routers, and add any router to OUTLIST that
+        # has images, and its newest image older than $1 days old (compared
+        # in seconds since epoch)
+	TODAY=$(date +%s)
+	AGELIMIT=$(expr $1 \* 86400) # 86400 seconds in a day
+	CUTOFF=$(expr $TODAY - $AGELIMIT)
+
+        RLIST=$(jshon -k < $JSON)
+        for ROUTER in $RLIST
+        do
+                MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+                MOD="${MOD%\"}"
+                MOD=${MOD#\"}
+                COUNT=$(ls $SERVEDIR | grep -c "$MOD-GO")
+                if [ "$COUNT" -gt "0" ] ; then
+                	# This router has at least 1 existing image.
+                	FRONT="$MOD-GO"
+                	LATEST=$(ls $SERVEDIR | grep "$FRONT" | tail -n 1)
+                	# Trim the front and back off to get the date.
+                	extract_date $LATEST
+                	LATEST=$MYDATE
+                	RDATESEC=$(date -d $LATEST +%s)
+			if [ "$RDATESEC" -lt "$CUTOFF" ] ; then
+				# Newest router image is older than cutoff
+	                        OUTLIST="$OUTLIST $ROUTER"
+	                fi
+                fi
+        done
+        # OUTLIST now contains routers with no images built
+        echo $OUTLIST
+
+        # If execute flag set, execute an autobuild based on the output list.
+
 	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
 }
 
 abstatus() {
+	# Print a human-formatted status report.
+	# Error out if an execute flag was passed:
 	[ "$EXECUTE" -eq "0" ] && echo 1>&2 "STATUS command does not support -e flag." && abhelp
-	echo "Do the status thing."
+
+	# Get the key list:
+	RLIST=$(jshon -k < $JSON)
+
+	# Find the longest router key name length:
+	KEYLEN="0"
+	for ROUTER in $RLIST
+	do
+		if [ ${#ROUTER} -gt "$KEYLEN" ] ; then
+			KEYLEN="${#ROUTER}"
+		fi
+	done
+
+	# Set width of key field to KEYLEN + 2
+	KEYLEN=$(expr "$KEYLEN" + 2)
+
+	# Report heading:
+	echo "Autobuild System Status, $(date)"
+	echo "Serve Directory: $SERVEDIR"
+	printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "MODEL" "QTY" "NEWEST" "OLDEST"
+
+	for ROUTER in $RLIST
+	do
+		# For each router in list, output a status line.
+
+		# Get file name and image count:
+		MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+                MOD="${MOD%\"}"
+                MOD=${MOD#\"}
+                COUNT=$(ls $SERVEDIR | grep -c "$MOD-GO")
+
+                # Get the oldest date:
+                OLDEST=$(ls $SERVEDIR | grep "$MOD-GO" | head -n 1)
+                extract_date "$OLDEST"
+                OLDEST="$MYDATE"
+
+                # Get the newest date:
+                NEWEST=$(ls $SERVEDIR | grep "$MOD-GO" | tail -n 1)
+                extract_date "$NEWEST"
+                NEWEST="$MYDATE"
+
+                # Print the status line.
+                printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "$ROUTER" "$COUNT" "$NEWEST" "$OLDEST"
+	done
 }
 
 COMMON=1	# All routers by default
+
 EXECUTE=1	# Do not execute by default.
 PULL=1		# Do not pull by default.
-OUTLIST="some sample routers"	# Start with blank output list.
+OUTLIST=""	# Start with blank output list.
 
 # Parse input flags.
 while getopts cep flag ; do
@@ -88,6 +206,15 @@ shift $((OPTIND -1))
 # Check param count.
 if [ $# -lt 1 -o $# -gt 2 ] ; then
 	abhelp
+fi
+
+# Test for the important directories.
+testdir $BUILDDIR && cd $BUILDDIR
+testdir $SERVEDIR
+JSON="$BUILDDIR/routers.json"
+if [ ! -f "$JSON" ] ; then
+	 echo 1>&2 "$JSON missing!"
+	 exit 1
 fi
 
 # Pull if requested

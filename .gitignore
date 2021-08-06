@@ -1,3 +1,4 @@
 # Standard ignore file for autobuilder project.
 output/
 sequence
+test.sh
