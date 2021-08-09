@@ -194,8 +194,8 @@ abstatus() {
 	KEYLEN=$(expr "$KEYLEN" + 2)
 
 	# Report heading:
-	echo "Autobuild System Status, $(date)"
-	echo "Serve Directory: $SERVEDIR"
+	echo "Autobuild System Status:"
+	echo "   $(date)"
 	printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "MODEL" "QTY" "NEWEST" "OLDEST"
 
 	for ROUTER in $RLIST
