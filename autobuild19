@@ -139,7 +139,7 @@ splitout "Lock file set. Pid is $$."
 
 touch $FLAGFILE
 
-# cd into the build root and update the git sources.
+# cd into the build root.
 
 if [ -d $BUILDDIR ] ; then
 	cd $BUILDDIR
@@ -148,17 +148,18 @@ else
 	exit 3
 fi
 
-splitout "Executing git pull."
+# EDIT: Git pull removed here and moved to management script only,
+# so that user has control of timing of pulls.
+# splitout "Executing git pull."
+# git pull
 
-git pull
-
-if [ "$?" -ne "0" ] ; then
-	# Git pull failed.
-	splitout "Git pull failure."
-	exit 4
-else
-	splitout "Git pull successful."
-fi
+# if [ "$?" -ne "0" ] ; then
+#	# Git pull failed.
+#	splitout "Git pull failure."
+#	exit 4
+#else
+#	splitout "Git pull successful."
+#fi
 
 # Check if a sequence number was provided, if so store it
 # for use in numbering output files.
