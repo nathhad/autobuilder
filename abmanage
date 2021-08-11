@@ -74,7 +74,7 @@ exit 1
 abnew() {
 	# Go through the list of routers, and add any router to OUTLIST that
 	# doesn't have at least one image file in SERVEDIR.
-	RLIST=$(jshon -k < $JSON)
+	RLIST=$(jshon -k < $JSON | sort)
 	for ROUTER in $RLIST
 	do
 		MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
@@ -101,7 +101,7 @@ abprune() {
 
 	PTTL="0"
 
-	RLIST=$(jshon -k < $JSON)
+	RLIST=$(jshon -k < $JSON | sort)
         for ROUTER in $RLIST
         do
                 MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
@@ -144,7 +144,7 @@ abstale() {
 	AGELIMIT=$(expr $1 \* 86400) # 86400 seconds in a day
 	CUTOFF=$(expr $TODAY - $AGELIMIT)
 
-        RLIST=$(jshon -k < $JSON)
+        RLIST=$(jshon -k < $JSON | sort)
         for ROUTER in $RLIST
         do
                 MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
@@ -179,7 +179,7 @@ abstatus() {
 	[ "$EXECUTE" -eq "0" ] && echo 1>&2 "STATUS command does not support -e flag." && abhelp
 
 	# Get the key list:
-	RLIST=$(jshon -k < $JSON)
+	RLIST=$(jshon -k < $JSON | sort)
 
 	# Find the longest router key name length:
 	KEYLEN="0"
