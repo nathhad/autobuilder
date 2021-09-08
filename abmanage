@@ -36,8 +36,16 @@ extract_date() {
 }
 
 abexecute() {
-	echo "Sending list $* to trigger file $TRIGGERFILE6"
-	echo "$*" >> $TRIGGERFILE
+	# Check to make sure we didn't get a null list.
+	COUNT=$(echo $* | wc -w)
+	if [ $COUNT -gt "0" ] ; then
+		# Some routers provided.
+		echo "Sending list $* to trigger file $TRIGGERFILE6"
+		echo "$*" >> $TRIGGERFILE
+	else
+		# Empty list! Do nothing.
+		echo "No new routers - not executing trigger."
+	fi
 }
 
 abhelp() {
