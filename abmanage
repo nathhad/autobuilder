@@ -44,7 +44,7 @@ abexecute() {
 		echo "$*" >> $TRIGGERFILE
 	else
 		# Empty list! Do nothing.
-		echo "No new routers - not executing trigger."
+		echo "No routers in execute list - not executing trigger."
 	fi
 }
 
@@ -54,7 +54,8 @@ Usage: abmanage [ -cep ] COMMAND [ parameter ]
 
 Options:
 
-   -c		Common routers only (per json instructions).
+   -c		Common routers only (per json instructions, not 
+   		yet implemented).
 
    -e		Execute a build using the resulting router list.
 
@@ -74,6 +75,13 @@ Commands:
 
    STATUS	List all routers in catalog, with summary of number
    		of images, earliest, and latest.
+
+   STRAY	List all image files in the build directory which
+   		no longer have a name in the catalog in a matching
+   		format. This will usually represent routers with a
+   		recent name change, which would be missed by a
+   		prune action. Listed routers will be moved to
+   		the trash directory in the conf file.
 
 EndOfHelp
 exit 1
@@ -231,6 +239,44 @@ abstatus() {
 	done
 }
 
+abstray() {
+	# Find all image files in serve folder not in the catalog, report
+	# them in an output list, and move them all to the trash folder.
+
+	# Get a starting list of all non-html files in the directory:
+	DIRLIST=$(ls -1 "$SERVEDIR" | grep -v ".html")
+
+	# Get a list of all the routers
+	RLIST=$(jshon -k < $JSON | sort)
+
+	# Cycle through the router list and remove all valid images from list.
+	for ROUTER in $RLIST
+        do
+                MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+                MOD="${MOD%\"}"
+                MOD=${MOD#\"}
+                # Remove everything from file list for this router:
+                DIRLIST=$(echo "$DIRLIST" | grep -v "$MOD")
+        done
+
+        # Everything left in DIRLIST should now be a file or directory that
+        # ISN'T a valid current catalog image.
+        COUNT="0"
+        OUTLIST=""
+        for STRAY in $DIRLIST
+        do
+		if [ -f $SERVEDIR/$STRAY ] ; then
+			# STRAY is a file, not a directory
+	        	let COUNT++
+        		OUTLIST="$OUTLIST $STRAY"
+        		mv $SERVEDIR/$STRAY $TRASH/$STRAY
+        	fi
+        done
+
+        # Report results.
+        echo "Cleaned up $COUNT stray files: $OUTLIST"
+}
+
 COMMON=1	# All routers by default
 
 EXECUTE=1	# Do not execute by default.
@@ -299,6 +345,7 @@ case "${1^^}" in
 		fi
 		;;
 	STATUS) abstatus ;;
+	STRAY) abstray ;;
 	*) abhelp ;;
 esac
 
