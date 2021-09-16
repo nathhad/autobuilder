@@ -247,7 +247,7 @@ for ROUTER in $BUILDLIST ; do
 	# Run the build script on the router.
 	# We will nice this down by an additional 5 just in case.
 
-	nice -n 5 $BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
+	MAKEFLAGS=$MAKEFLAGS nice -n 5 $BUILDDIR/build $ROUTER >> $BUILDOUTPUT 2>> $BUILDERROR
 
 	RESULT=$?
 
