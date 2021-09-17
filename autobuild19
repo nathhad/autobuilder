@@ -196,16 +196,19 @@ if [ $# -gt "0" ] ; then
 	done
 	splitout "Final build list is: $BUILDLIST"
 else
-	splitout "No build list given, building full catalog."
-	BUILDLIST="$BUILDCAT"
+	splitout "No build list given, cancelling."
+	exit 99
 fi
+
+TARGETCOUNT=$(echo "$BUILDLIST" | wc -w)
+PROGRESS="0"
 
 # Check for disk space above minimum before starting.
 
 checkfree
 
 splitout "Initial disk space check passed."
-splitout "Preparing the build loop ..."
+splitout "Preparing the build loop for $TARGETCOUNT routers..."
 
 if [ -f $BUILDOUTPUT ] ; then rm -f $BUILDOUTPUT ; fi				# Flush output file
 if [ -f $BUILDERROR ] ; then rm -f $BUILDERROR ; fi				# Flush error file
@@ -231,7 +234,7 @@ for ROUTER in $BUILDLIST ; do
 		exit 99
 	fi
 
-	splitout "Starting on $ROUTER."
+	splitout "($PROGRESS/$TARGETCOUNT) Starting on $ROUTER."
 
 	# Prep the BUILDOUTPUT file:
 	echo "____________________" >> $BUILDOUTPUT
