@@ -234,6 +234,7 @@ for ROUTER in $BUILDLIST ; do
 		exit 99
 	fi
 
+	let PROGRESS++
 	splitout "($PROGRESS/$TARGETCOUNT) Starting on $ROUTER."
 
 	# Prep the BUILDOUTPUT file:
