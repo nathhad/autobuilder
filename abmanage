@@ -212,6 +212,7 @@ abstatus() {
 	# Report heading:
 	echo "Autobuild System Status:"
 	echo "   $(date)"
+	echo "   $(echo $RLIST | wc -w) in catalog."
 	printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "MODEL" "QTY" "NEWEST" "OLDEST"
 
 	for ROUTER in $RLIST
