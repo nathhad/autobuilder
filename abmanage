@@ -76,6 +76,9 @@ Commands:
    STATUS	List all routers in catalog, with summary of number
    		of images, earliest, and latest.
 
+   STOP		Stop the currently running build loop after the
+   		completion of the current image (clean).
+
    STRAY	List all image files in the build directory which
    		no longer have a name in the catalog in a matching
    		format. This will usually represent routers with a
@@ -240,6 +243,38 @@ abstatus() {
 	done
 }
 
+abstop() {
+	# Stop the currently running test loop, wait for it to exit, and
+	# then clean up the stop file.
+
+	if [ ! -f $PIDFILE ] ; then
+		echo "PID file not found, there is not an autobuild instance running."
+		exit 1
+	fi
+
+	echo "Running build loop has PID $(cat $PIDFILE)"
+	echo "Placing stop trigger file at $STOPFILE"
+
+	touch $STOPFILE
+
+	echo "Waiting for current image to finish cleanly:"
+
+	# Sit in a loop while we wait for it to finish. Print a . every five seconds.
+
+	while [ -f $PIDFILE ] ; do
+		echo -n '.'
+		sleep 5
+	done
+
+	echo "Current running build loop has exited."
+	echo "Please be aware there may still be other builds queued,"
+	echo "There are $(ps -e | grep -c abtrigger) copies of abtrigger waiting."
+
+	rm $STOPFILE
+
+	echo "Stopfile removed."
+}
+
 abstray() {
 	# Find all image files in serve folder not in the catalog, report
 	# them in an output list, and move them all to the trash folder.
@@ -347,6 +382,7 @@ case "${1^^}" in
 		;;
 	STATUS) abstatus ;;
 	STRAY) abstray ;;
+	STOP) abstop ;;
 	*) abhelp ;;
 esac
 
