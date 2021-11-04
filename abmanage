@@ -266,9 +266,14 @@ abstop() {
 		sleep 5
 	done
 
+	echo ""
 	echo "Current running build loop has exited."
 	echo "Please be aware there may still be other builds queued,"
 	echo "There are $(ps -e | grep -c abtrigger) copies of abtrigger waiting."
+	echo "You may choose to wait at the following prompt for other copies to cancel."
+	echo
+	read -n 1 -s -r -p "Press any key to remove stopfile and continue"
+	echo
 
 	rm $STOPFILE
 
