@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This is a replacement for cron triggering of abtrigger, for use
+# when this system is set up in a docker container. Use of
+# cron is unnecessary overkill, when all we really need is
+# a single thread infinite loop that runs abtrigger every
+# however many minutes.
+
+source /serve/rooter/autobuild/autobuild19.conf
+
+while [ true ] ; do
+	/bin/bash $AUTODIR/abtrigger
+	sleep 60
+done
+
