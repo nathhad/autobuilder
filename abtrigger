@@ -47,7 +47,7 @@ if [ -f $TRIGGERFILE ] ; then
 	while [ -f $PIDFILE ] ; do
 		sleep 30
 	done
-	/home/builder/rooter/autobuild/autobuild19 $SEQNO $LIST &>$AUTODIR/output/$SEQNO.build.txt &
+	$AUTODIR/autobuild19 $SEQNO $LIST &>$AUTODIR/output/$SEQNO.build.txt &
 	logger "abtrigger: autobuild19 sequence $SEQNO triggered with list: $LIST"
 fi
 
