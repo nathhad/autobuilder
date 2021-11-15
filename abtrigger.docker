@@ -6,10 +6,10 @@
 # a single thread infinite loop that runs abtrigger every
 # however many minutes.
 
-source /serve/rooter/autobuild/autobuild19.conf
+source ~/.config/autobuild19/autobuild19.conf
 
 while [ true ] ; do
-	/bin/bash $AUTODIR/abtrigger
+	exec /bin/bash $AUTODIR/abtrigger
 	sleep 60
 done
 

@@ -17,7 +17,8 @@
 # IMPORTANT: you MUST edit the following line to point to the
 # config file you want to use for this instance of the script.
 #
-source /serve/rooter/autobuild/autobuild19.conf
+source ~/.config/autobuild19/autobuild19.conf
+# source /serve/rooter/autobuild/autobuild19.conf
 #
 ######
 

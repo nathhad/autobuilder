@@ -16,14 +16,7 @@
 # otherwise the script will pull the list of all
 # available images from alllist.txt and build all.
 
-######
-#
-# IMPORTANT: you MUST edit the following line to point to the
-# config file you want to use for this instance of the script.
-#
-source /serve/rooter/autobuild/autobuild19.conf
-#
-######
+source ~/.config/autobuild19/autobuild19.conf
 
 splitout() {
 	# Used to output the same text to both log and standard output.

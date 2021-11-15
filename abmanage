@@ -8,11 +8,10 @@
 
 ######
 #
-# IMPORTANT: you MUST edit the following line to point to the
-# config file you want to use for this instance of the script.
+# IMPORTANT: you MUST configure a link in your user's home config directory
+# pointing to the directory where these conf files are actually stored.
 #
-CONF=/serve/rooter/autobuild/autobuild19.conf
-source $CONF
+source ~/.config/autobuild19/autobuild19.conf
 #
 ######
 
