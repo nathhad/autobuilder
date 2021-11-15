@@ -32,7 +32,7 @@ testdir() {
 extract_date() {
         MYDATE=${1##*-GO}
         MYDATE=${MYDATE%.zip}
-        MYDATE=${MYDATE%-AB}
+        MYDATE=${MYDATE%$SUFFIX}
 }
 
 abexecute() {
