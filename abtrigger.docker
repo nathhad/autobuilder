@@ -9,7 +9,7 @@
 source ~/.config/autobuild19/autobuild19.conf
 
 while [ true ] ; do
-	exec /bin/bash $AUTODIR/abtrigger
+	/bin/bash $AUTODIR/abtrigger
 	sleep 60
 done
 
