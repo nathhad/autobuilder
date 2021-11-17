@@ -22,6 +22,31 @@ source ~/.config/autobuild19/autobuild19.conf
 #
 ######
 
+splitout() {
+        # Used to output the same text to both log and standard output.
+        # If running in a Docker container, will send all output to
+        # stdout instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+        else
+                logger -t autobuilder "$*"
+                echo "$*"
+        fi
+}
+
+splitecho() {
+        # Used to output the same text to standard output.
+        # If running in a Docker container, will send all output to
+        # stdout of #1 process instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+        else
+                echo "$*"
+        fi
+}
+
 if [ -f $TRIGGERFILE ] ; then
 	# User has requested an autobuild run.
 
@@ -39,16 +64,16 @@ if [ -f $TRIGGERFILE ] ; then
 
 	LIST=`tr '\n' ' ' < $TRIGGERFILE`
 	LIST=`echo ${LIST^^} | tr -d '\r'`
-	rm -f $TRIGGERFILE && logger - autobuilder "abtrigger: Trigger file found and removed"
+	rm -f $TRIGGERFILE && splitout "abtrigger: Trigger file found and removed"
 	# Above will import contents of the trigger file as a
 	# single space delimited line.
-	logger -t autobuilder "abtrigger: Sequence $SEQNO, trigger file list: $LIST"
+	splitout "abtrigger: Sequence $SEQNO, trigger file list: $LIST"
 
 	# Check if autobuilder running; if so, wait.
 	while [ -f $PIDFILE ] ; do
 		sleep 30
 	done
 	$AUTODIR/autobuild19 $SEQNO $LIST &>$AUTODIR/output/$SEQNO.build.txt &
-	logger "abtrigger: autobuild19 sequence $SEQNO triggered with list: $LIST"
+	splitout "abtrigger: autobuild19 sequence $SEQNO triggered with list: $LIST"
 fi
 
