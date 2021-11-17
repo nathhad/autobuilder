@@ -234,11 +234,11 @@ abstatus() {
 	KEYLEN=$(expr "$KEYLEN" + 2)
 
 	# Report heading:
-	splitecho "Autobuild System Status:"
-	splitecho "   $(date)"
-	splitecho "   $(echo $RLIST | wc -w) in catalog."
+	echo "Autobuild System Status:"
+	echo "   $(date)"
+	echo "   $(echo $RLIST | wc -w) in catalog."
 	LINEOUT=$( printf  "%${KEYLEN}s  %-5s%-12s%-12s" "MODEL" "QTY" "NEWEST" "OLDEST" )
-	splitecho "$LINEOUT"
+	echo "$LINEOUT"
 
 	for ROUTER in $RLIST
 	do
@@ -262,7 +262,7 @@ abstatus() {
 
                 # Print the status line.
                 LINEOUT=$( printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "$ROUTER" "$COUNT" "$NEWEST" "$OLDEST" )
-                splitecho "$LINEOUT"
+                echo "$LINEOUT"
 	done
 }
 
@@ -348,6 +348,9 @@ COMMON=1	# All routers by default
 EXECUTE=1	# Do not execute by default.
 PULL=1		# Do not pull by default.
 OUTLIST=""	# Start with blank output list.
+
+# If in a Docker container, echo the command to log
+if [ -f /.dockerenv ] ; then echo "$BASH_SOURCE $*" >> /proc/1/fd/1 ; fi
 
 # Parse input flags.
 while getopts cep flag ; do
