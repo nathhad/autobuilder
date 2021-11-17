@@ -41,7 +41,7 @@ splitecho() {
         # stdout of #1 process instead.
         if [ -f /.dockerenv ] ; then
                 echo "$*" >> /proc/1/fd/1
-                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+                if [ "$$" != "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
         else
                 echo "$*"
         fi
@@ -52,7 +52,7 @@ if [ -f $TRIGGERFILE ] ; then
 
 	# Check if sequence file exists; if not, start at 1.
 	if [ ! -f $SEQFILE ] ; then
-		logger -t autobuilder "abtrigger: Creating sequence file."
+		splitout "abtrigger: Creating sequence file."
 		echo "1" > $SEQFILE
 	fi
 
