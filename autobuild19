@@ -20,8 +20,14 @@ source ~/.config/autobuild19/autobuild19.conf
 
 splitout() {
 	# Used to output the same text to both log and standard output.
-        logger -t autobuilder "$*"
-        echo "$*"
+	# If running in a Docker container, will send all output to
+	# stdout instead.
+	if [ -f /.dockerenv ] ; then
+		echo "$*" >> /proc/1/fd/1
+	else
+	        logger -t autobuilder "$*"
+        	echo "$*"
+        fi
 }
 
 cleanup() {

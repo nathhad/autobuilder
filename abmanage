@@ -15,6 +15,29 @@ source ~/.config/autobuild19/autobuild19.conf
 #
 ######
 
+splitout() {
+        # Used to output the same text to both log and standard output.
+        # If running in a Docker container, will send all output to
+        # stdout instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+        else
+                logger -t autobuilder "$*"
+                echo "$*"
+        fi
+}
+
+splitecho() {
+        # Used to output the same text to standard output.
+        # If running in a Docker container, will send all output to
+        # stdout of #1 process instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+        else
+                echo "$*"
+        fi
+}
+
 is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
 
 testdir() {
@@ -22,8 +45,8 @@ testdir() {
 		return 0
 	else
 		# Error - critical directory missing
-        	echo 1>&2 "Directory $1 missing!"
-        	echo 1>&2 "Check configuration file $CONF"
+        	splitecho 1>&2 "Directory $1 missing!"
+        	splitecho 1>&2 "Check configuration file $CONF"
         	exit 1
         fi
 }
@@ -52,9 +75,6 @@ cat 1>&2 <<EndOfHelp
 Usage: abmanage [ -cep ] COMMAND [ parameter ]
 
 Options:
-
-   -c		Common routers only (per json instructions, not 
-   		yet implemented).
 
    -e		Execute a build using the resulting router list.
 
@@ -104,7 +124,7 @@ abnew() {
 		fi
 	done
 	# OUTLIST now contains routers with no images built
-	echo $OUTLIST
+	splitecho $OUTLIST
 
 	# If execute flag set, execute an autobuild based on the output list.
 	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
@@ -115,7 +135,7 @@ abprune() {
 	# over that number, starting with the oldest. Move the pruned images
 	# into the trash directory set in the conf file.
 	# Error out if an execute flag was passed:
-        [ "$EXECUTE" -eq "0" ] && echo 1>&2 "PRUNE command does not support -e flag." && abhelp
+        [ "$EXECUTE" -eq "0" ] && splitecho "PRUNE command does not support -e flag." && abhelp
 
 	PTTL="0"
 
@@ -142,14 +162,14 @@ abprune() {
         done
 
         # Print a summary of results.
-        echo "Pruned $PTTL images: $OUTLIST"
+        splitecho "Pruned $PTTL images: $OUTLIST"
 }
 
 abpull() {
-#	echo "Executing git pull of build environment:"
+	splitecho "Executing git pull of build environment:"
 	git pull &>/dev/null
 	if [ $? -ne "0" ] ; then
-		echo 1>&2 "Error during git pull, aborting."
+		splitecho "Error during git pull, aborting."
 		exit 1
 	fi
 }
@@ -184,7 +204,7 @@ abstale() {
                 fi
         done
         # OUTLIST now contains routers with no images built
-        echo $OUTLIST
+        splitecho $OUTLIST
 
         # If execute flag set, execute an autobuild based on the output list.
 
@@ -194,7 +214,7 @@ abstale() {
 abstatus() {
 	# Print a human-formatted status report.
 	# Error out if an execute flag was passed:
-	[ "$EXECUTE" -eq "0" ] && echo 1>&2 "STATUS command does not support -e flag." && abhelp
+	[ "$EXECUTE" -eq "0" ] && splitecho "STATUS command does not support -e flag." && abhelp
 
 	# Get the key list:
 	RLIST=$(jshon -k < $JSON | sort)
@@ -212,10 +232,11 @@ abstatus() {
 	KEYLEN=$(expr "$KEYLEN" + 2)
 
 	# Report heading:
-	echo "Autobuild System Status:"
-	echo "   $(date)"
-	echo "   $(echo $RLIST | wc -w) in catalog."
-	printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "MODEL" "QTY" "NEWEST" "OLDEST"
+	splitecho "Autobuild System Status:"
+	splitecho "   $(date)"
+	splitecho "   $(echo $RLIST | wc -w) in catalog."
+	LINEOUT=$( printf  "%${KEYLEN}s  %-5s%-12s%-12s" "MODEL" "QTY" "NEWEST" "OLDEST" )
+	splitecho "$LINEOUT"
 
 	for ROUTER in $RLIST
 	do
@@ -238,7 +259,8 @@ abstatus() {
                 NEWEST="$MYDATE"
 
                 # Print the status line.
-                printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "$ROUTER" "$COUNT" "$NEWEST" "$OLDEST"
+                LINEOUT=$( printf  "%${KEYLEN}s  %-5s%-12s%-12s\n" "$ROUTER" "$COUNT" "$NEWEST" "$OLDEST" )
+                splitecho "$LINEOUT"
 	done
 }
 
@@ -247,16 +269,16 @@ abstop() {
 	# then clean up the stop file.
 
 	if [ ! -f $PIDFILE ] ; then
-		echo "PID file not found, there is not an autobuild instance running."
+		splitecho "PID file not found, there is not an autobuild instance running."
 		exit 1
 	fi
 
-	echo "Running build loop has PID $(cat $PIDFILE)"
-	echo "Placing stop trigger file at $STOPFILE"
+	splitecho "Running build loop has PID $(cat $PIDFILE)"
+	splitecho "Placing stop trigger file at $STOPFILE"
 
 	touch $STOPFILE
 
-	echo "Waiting for current image to finish cleanly:"
+	splitecho "Waiting for current image to finish cleanly:"
 
 	# Sit in a loop while we wait for it to finish. Print a . every five seconds.
 
@@ -265,18 +287,20 @@ abstop() {
 		sleep 5
 	done
 
-	echo ""
-	echo "Current running build loop has exited."
-	echo "Please be aware there may still be other builds queued,"
-	echo "There are $(ps -e | grep -c abtrigger) copies of abtrigger waiting."
-	echo "You may choose to wait at the following prompt for other copies to cancel."
-	echo
-	read -n 1 -s -r -p "Press any key to remove stopfile and continue"
-	echo
+	splitecho ""
+	splitecho "Current running build loop has exited."
+	splitecho "Please be aware there may still be other builds queued,"
+	splitecho "There are $(ps -e | grep -c abtrigger) copies of abtrigger waiting."
+	if [ ! -f /.dockerenv ] ; then
+		echo "You may choose to wait at the following prompt for other copies to cancel."
+		echo
+		read -n 1 -s -r -p "Press any key to remove stopfile and continue"
+		echo
+	fi
 
 	rm $STOPFILE
 
-	echo "Stopfile removed."
+	splitecho "Stopfile removed."
 }
 
 abstray() {
@@ -314,7 +338,7 @@ abstray() {
         done
 
         # Report results.
-        echo "Cleaned up $COUNT stray files: $OUTLIST"
+        splitecho "Cleaned up $COUNT stray files: $OUTLIST"
 }
 
 COMMON=1	# All routers by default
@@ -345,7 +369,7 @@ testdir $BUILDDIR && cd $BUILDDIR
 testdir $SERVEDIR
 JSON="$BUILDDIR/routers.json"
 if [ ! -f "$JSON" ] ; then
-	 echo 1>&2 "$JSON missing!"
+	 splitecho "$JSON missing!"
 	 exit 1
 fi
 
@@ -362,11 +386,11 @@ case "${1^^}" in
 			if [ $? -eq "0" ] ; then
 				abprune "$2"
 			else
-				echo "Argument required: number of images to keep (integer)"
+				splitecho "Argument required: number of images to keep (integer)"
 				abhelp
 			fi
 		else
-			echo "Argument required: number of images to keep (integer)"
+			splitecho "Argument required: number of images to keep (integer)"
 			abhelp
 		fi
 		;;
@@ -376,11 +400,11 @@ case "${1^^}" in
 			if [ $? -eq "0" ] ; then
 				abstale "$2"
 			else
-				echo "Argument required: number of days (integer)"
+				splitecho "Argument required: number of days (integer)"
                         	abhelp
 			fi
 		else
-			echo "Argument required: number of days (integer)"
+			splitecho "Argument required: number of days (integer)"
 	                abhelp
 		fi
 		;;
