@@ -19,14 +19,27 @@
 source ~/.config/autobuild19/autobuild19.conf
 
 splitout() {
-	# Used to output the same text to both log and standard output.
-	# If running in a Docker container, will send all output to
-	# stdout instead.
-	if [ -f /.dockerenv ] ; then
-		echo "$*" >> /proc/1/fd/1
-	else
-	        logger -t autobuilder "$*"
-        	echo "$*"
+        # Used to output the same text to both log and standard output.
+        # If running in a Docker container, will send all output to
+        # stdout instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+        else
+                logger -t autobuilder "$*"
+                echo "$*"
+        fi
+}
+
+splitecho() {
+        # Used to output the same text to standard output.
+        # If running in a Docker container, will send all output to
+        # stdout of #1 process instead.
+        if [ -f /.dockerenv ] ; then
+                echo "$*" >> /proc/1/fd/1
+                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+        else
+                echo "$*"
         fi
 }
 
