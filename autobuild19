@@ -24,7 +24,7 @@ splitout() {
         # stdout instead.
         if [ -f /.dockerenv ] ; then
                 echo "$*" >> /proc/1/fd/1
-                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+                if [ "$(readlink -f /proc/$$/fd/1)" != "$(readlink -f /proc/1/fd/1)" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
         else
                 logger -t autobuilder "$*"
                 echo "$*"
@@ -37,7 +37,7 @@ splitecho() {
         # stdout of #1 process instead.
         if [ -f /.dockerenv ] ; then
                 echo "$*" >> /proc/1/fd/1
-                if [ "$$" -ne "1" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
+                if [ "$(readlink -f /proc/$$/fd/1)" != "$(readlink -f /proc/1/fd/1)" ] ; then echo "$*" >> /proc/$$/fd/1 ; fi
         else
                 echo "$*"
         fi
