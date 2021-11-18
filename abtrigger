@@ -47,6 +47,8 @@ splitecho() {
         fi
 }
 
+echo "abtrigger PID: $$" >> /proc/1/fd/1
+
 if [ -f $TRIGGERFILE ] ; then
 	# User has requested an autobuild run.
 
