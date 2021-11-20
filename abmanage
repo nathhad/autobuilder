@@ -372,7 +372,7 @@ fi
 # Test for the important directories.
 testdir $BUILDDIR && cd $BUILDDIR
 testdir $SERVEDIR
-JSON="$BUILDDIR/routers.json"
+JSON="$BUILDJSON"
 if [ ! -f "$JSON" ] ; then
 	 splitecho "$JSON missing!"
 	 exit 1
