@@ -120,7 +120,7 @@ abnew() {
 		MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
 		MOD="${MOD%\"}"
 		MOD=${MOD#\"}
-		COUNT=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep -c "$MOD-GO")
+		COUNT=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep -c "$MOD-GO")
 		if [ ! "$COUNT" -gt "0" ] ; then
 			OUTLIST="$OUTLIST $ROUTER"
 		fi
@@ -147,11 +147,11 @@ abprune() {
                 MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
                 MOD="${MOD%\"}"
                 MOD=${MOD#\"}
-                COUNT=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep -c "$MOD-GO")
+                COUNT=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep -c "$MOD-GO")
                 if [ "$COUNT" -gt "$1" ] ; then
                 	# This router needs pruning. Make the list:
                 	PCOUNT=$(expr "$COUNT" - "$1")
-                	PLIST=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep "$MOD-GO" | head -n "$PCOUNT")
+                	PLIST=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep "$MOD-GO" | head -n "$PCOUNT")
                 	for PRUNEFILE in $PLIST ; do
                 		mv $SERVEDIR/$PRUNEFILE $TRASH/
                 	done
@@ -190,11 +190,11 @@ abstale() {
                 MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
                 MOD="${MOD%\"}"
                 MOD=${MOD#\"}
-                COUNT=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep -c "$MOD-GO")
+                COUNT=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep -c "$MOD-GO")
                 if [ "$COUNT" -gt "0" ] ; then
                 	# This router has at least 1 existing image.
                 	FRONT="$MOD-GO"
-                	LATEST=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep "$FRONT" | tail -n 1)
+                	LATEST=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep "$FRONT" | tail -n 1)
                 	# Trim the front and back off to get the date.
                 	extract_date $LATEST
                 	LATEST=$MYDATE
@@ -248,15 +248,15 @@ abstatus() {
 		MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
                 MOD="${MOD%\"}"
                 MOD=${MOD#\"}
-                COUNT=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep -c "$MOD-GO")
+                COUNT=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep -c "$MOD-GO")
 
                 # Get the oldest date:
-                OLDEST=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep "$MOD-GO" | head -n 1)
+                OLDEST=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep "$MOD-GO" | head -n 1)
                 extract_date "$OLDEST"
                 OLDEST="$MYDATE"
 
                 # Get the newest date:
-                NEWEST=$(ls $SERVEDIR | grep "$SUFFIX.zip" | grep "$MOD-GO" | tail -n 1)
+                NEWEST=$(ls $SERVEDIR | grep -- "$SUFFIX.zip" | grep "$MOD-GO" | tail -n 1)
                 extract_date "$NEWEST"
                 NEWEST="$MYDATE"
 
@@ -313,7 +313,7 @@ abstray() {
 	# by the current SUFFIX. This enables sharing output directory between
 	# multiple autobuild images, without the different autobuild systems
 	# wrecking each others files.
-	DIRLIST=$(ls -1 "$SERVEDIR" | grep "$SUFFIX.zip" | grep -v ".html")
+	DIRLIST=$(ls -1 "$SERVEDIR" | grep -- "$SUFFIX.zip" | grep -v ".html")
 
 	# Get a list of all the routers
 	RLIST=$(jshon -k < $JSON | sort)
