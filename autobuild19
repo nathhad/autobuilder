@@ -279,10 +279,10 @@ for ROUTER in $BUILDLIST ; do
 		echo "$ROUTER `date`" > $ERRFILE
 		echo >> $ERRFILE
 		echo "STDERR:" >> $ERRFILE
-		tail $BUILDERROR >> $ERRFILE
+		tail -n 20 $BUILDERROR >> $ERRFILE
 		echo >> $ERRFILE
 		echo "STDOUT:" >> $ERRFILE
-		tail $BUILDOUTPUT >> $ERRFILE
+		tail -n 20 $BUILDOUTPUT >> $ERRFILE
 		echo >> $ERRFILE
 		splitout "Errors written to $ERRFILE"
 
@@ -303,10 +303,10 @@ for ROUTER in $BUILDLIST ; do
                 	echo "$ROUTER `date`" > $ERRFILE
                 	echo >> $ERRFILE
                 	echo "STDERR:" >> $ERRFILE
-                	tail $BUILDERROR >> $ERRFILE
+                	tail -n 20 $BUILDERROR >> $ERRFILE
                 	echo >> $ERRFILE
                 	echo "STDOUT:" >> $ERRFILE
-                	tail $BUILDOUTPUT >> $ERRFILE
+                	tail -n 20 $BUILDOUTPUT >> $ERRFILE
                 	echo >> $ERRFILE
                 	splitout "Errors written to $ERRFILE"
 
