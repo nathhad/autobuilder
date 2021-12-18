@@ -169,11 +169,14 @@ abprune() {
 
 abpull() {
 	splitecho "Executing git pull of build environment:"
-	git pull &>/dev/null
+	LASTDIR=$(pwd)
+	cd $BUILDDIR
+	git pull origin &>/dev/null
 	if [ $? -ne "0" ] ; then
 		splitecho "Error during git pull, aborting."
 		exit 1
 	fi
+	cd $LASTDIR
 }
 
 abstale() {
