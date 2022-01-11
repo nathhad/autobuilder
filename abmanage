@@ -72,6 +72,17 @@ abexecute() {
 	fi
 }
 
+aball() {
+	# Go through the list of routers, and add EVERY router to OUTLIST.
+	RLIST=$(jshon -k < $JSON | sort)
+
+	# OUTLIST now contains all routers
+	splitecho $OUTLIST
+
+	# If execute flag set, execute an autobuild based on the output list.
+	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
+}
+
 abhelp() {
 cat 1>&2 <<EndOfHelp
 Usage: abmanage [ -cep ] COMMAND [ parameter ]
@@ -83,6 +94,8 @@ Options:
    -p		Perform a git pull before performing the command.
 
 Commands:
+
+   ALL		List all routers in the build catalog.
 
    HELP		Display this usage message.
 
@@ -389,6 +402,7 @@ fi
 
 # Sort on command.
 case "${1^^}" in
+	ALL) aball ;;
 	HELP) abhelp ;;
 	NEW) abnew ;;
 	PRUNE)
