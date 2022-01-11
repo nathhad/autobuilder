@@ -75,6 +75,11 @@ abexecute() {
 aball() {
 	# Go through the list of routers, and add EVERY router to OUTLIST.
 	RLIST=$(jshon -k < $JSON | sort)
+	OUTLIST=""
+	for ROUTER in $RLIST
+	do
+		OUTLIST="$OUTLIST $ROUTER"
+	done
 
 	# OUTLIST now contains all routers
 	splitecho $OUTLIST
