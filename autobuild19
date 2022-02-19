@@ -2,7 +2,7 @@
 
 # This is a full autobuild wrapper script for DM's ROOter
 # build script system. It assumes an already installed
-# and working 19076 build environment.
+# and working build environment.
 
 # It will handle updating the build environment, and
 # then work its way through a build of all the
@@ -12,11 +12,9 @@
 # it still gets removed if the script exits
 # unexpectedly.
 
-# A list of images to build can be included as parameters;
-# otherwise the script will pull the list of all
-# available images from alllist.txt and build all.
+# A list of images to build must be included as parameters.
 
-source ~/.config/autobuild19/autobuild19.conf
+source /build/autobuild/autobuild19.conf
 
 splitout() {
         # Used to output the same text to both log and standard output.

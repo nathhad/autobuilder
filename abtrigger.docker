@@ -6,7 +6,7 @@
 # a single thread infinite loop that runs abtrigger every
 # however many minutes.
 
-source ~/.config/autobuild19/autobuild19.conf
+source /build/autobuild/autobuild19.conf
 
 while [ true ] ; do
 	/bin/bash $AUTODIR/abtrigger

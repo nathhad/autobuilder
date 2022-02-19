@@ -7,18 +7,18 @@
 # run that list. Otherwise, it will trigger a full catalog
 # build.
 
-# Added 7/19/21: sequence number output. The trigger script
-# will redirect all stdout and stderr into a text file with
-# the sequence number, and pass that sequence number to the
-# build script for use in error files.
+# This trigger system is meant to be used with autobuild when
+# running on a standalone bare-metal system. For use within
+# the docker-rooterbuilder system, use abtrigger.docker as a
+# wrapper for this script instead of trying to set up cron
+# within a docker container.
 
 ######
 #
 # IMPORTANT: you MUST edit the following line to point to the
 # config file you want to use for this instance of the script.
 #
-source ~/.config/autobuild19/autobuild19.conf
-# source /serve/rooter/autobuild/autobuild19.conf
+source /build/autobuild/autobuild19.conf
 #
 ######
 

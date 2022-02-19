@@ -8,10 +8,10 @@
 
 ######
 #
-# IMPORTANT: you MUST configure a link in your user's home config directory
-# pointing to the directory where these conf files are actually stored.
+# IMPORTANT: you MUST configure a link at /build/autobuild pointing to the
+# correct location where these config files are shown.
 #
-source ~/.config/autobuild19/autobuild19.conf
+source /build/autobuild/autobuild19.conf
 #
 ######
 
