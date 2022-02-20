@@ -16,6 +16,13 @@
 
 source /build/autobuild/autobuild19.conf
 
+# If uid and gid environment variables are set, save them to use for
+# a chown of the output file, otherwise default to the uid and gid
+# of the build process (which will usually be 0:0)
+
+OUID=${PUID:-0}
+OGID=${PGID:-0}
+
 splitout() {
         # Used to output the same text to both log and standard output.
         # If running in a Docker container, will send all output to
@@ -78,10 +85,14 @@ pushimage() {
 	FILE="$1"
 	FROOT=${FILE%.*}
 	FEXT=${FILE##*.}
+	FDEST="$SERVEDIR/$FROOT$SUFFIX.$FEXT"
 
 	# Move the file.
 	# Note: THIS WILL OVERWRITE if there is an existing file.
-	mv -f "$SOURCE/$1" "$SERVEDIR/$FROOT$SUFFIX.$FEXT"
+	mv -f "$SOURCE/$1" "$FDEST"
+
+	# chown the file to the output uid and gid.
+	chown $OUID:$OGID $FDEST
 }
 
 is_int() { case ${1#[-+]} in '' | *[!0-9]* ) return 1;; esac ;}
