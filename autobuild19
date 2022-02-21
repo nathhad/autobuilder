@@ -23,6 +23,10 @@ source /build/autobuild/autobuild19.conf
 OUID=${PUID:-0}
 OGID=${PGID:-0}
 
+# Save start time of build to track progress
+
+SECSTART=$(date +%s)
+
 splitout() {
         # Used to output the same text to both log and standard output.
         # If running in a Docker container, will send all output to
@@ -133,6 +137,14 @@ success() {
 
         # Report the success.
         splitout "$OUTFILE pushed to $SERVEDIR"
+        SECCUR=$(date +%s)
+        SECELAPSED=$(( $SECCUR - $SECSTART ))
+        SECAVG=$(( $SECELAPSED / $PROGRESS ))
+        REMCOUNT=$(( $TARGETCOUNT - $PROGRESS ))
+        REMSEC=$(( $REMCOUNT * $SECAVG ))
+        SECETA=$(( $(date +%s) + $REMSEC ))
+
+        splitout "Elapsed: $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u %H:%M:%S), Finish: $(date -d @$SECETA)"
 }
 
 ############################
@@ -288,10 +300,10 @@ for ROUTER in $BUILDLIST ; do
 		echo "$ROUTER `date`" > $ERRFILE
 		echo >> $ERRFILE
 		echo "STDERR:" >> $ERRFILE
-		tail -n 20 $BUILDERROR >> $ERRFILE
+		tail -n 200 $BUILDERROR >> $ERRFILE
 		echo >> $ERRFILE
 		echo "STDOUT:" >> $ERRFILE
-		tail -n 20 $BUILDOUTPUT >> $ERRFILE
+		tail -n 200 $BUILDOUTPUT >> $ERRFILE
 		echo >> $ERRFILE
 		splitout "Errors written to $ERRFILE"
 
@@ -312,10 +324,10 @@ for ROUTER in $BUILDLIST ; do
                 	echo "$ROUTER `date`" > $ERRFILE
                 	echo >> $ERRFILE
                 	echo "STDERR:" >> $ERRFILE
-                	tail -n 20 $BUILDERROR >> $ERRFILE
+                	tail -n 200 $BUILDERROR >> $ERRFILE
                 	echo >> $ERRFILE
                 	echo "STDOUT:" >> $ERRFILE
-                	tail -n 20 $BUILDOUTPUT >> $ERRFILE
+                	tail -n 200 $BUILDOUTPUT >> $ERRFILE
                 	echo >> $ERRFILE
                 	splitout "Errors written to $ERRFILE"
 
