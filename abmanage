@@ -72,6 +72,33 @@ abexecute() {
 	fi
 }
 
+abfilter() {
+	# Verify an outlist was received.
+	local WORKLIST="$*"
+	[ -z "WORKLIST" ] && return
+
+	# Filter out any routers listed in filter.conf.
+	if [ -f $FILTERCONF ] ; then
+		# Check if conf exists but empty, return if so
+		FILTER=$(cat $FILTERCONF)
+		[ -z "$FILTER" ] && return
+
+		# We have at least some filters to apply.
+		# Loop through outlist
+		WORKOUT=""
+		for ROUTER in $WORKLIST
+		do
+			if [ $(echo "$FILTER" | grep -c "$ROUTER") -eq "0" ] ; then
+				WORKOUT="$WORKOUT $ROUTER"
+			fi
+		done
+
+		# WORKOUT now contains filtered outlist.
+		splitout "Filter $FILTER applied."
+		OUTLIST="$WORKOUT"
+	fi
+}
+
 aball() {
 	# Go through the list of routers, and add EVERY router to OUTLIST.
 	RLIST=$(jshon -k < $JSON | sort)
@@ -82,6 +109,10 @@ aball() {
 	done
 
 	# OUTLIST now contains all routers
+
+	[ "$FILTER" -eq "0" ] && abfilter "$OUTLIST"
+	# Outlist now filtered if required.
+
 	splitecho $OUTLIST
 
 	# If execute flag set, execute an autobuild based on the output list.
@@ -90,11 +121,13 @@ aball() {
 
 abhelp() {
 cat 1>&2 <<EndOfHelp
-Usage: abmanage [ -cep ] COMMAND [ parameter ]
+Usage: abmanage [ -efp ] COMMAND [ parameter ]
 
 Options:
 
    -e		Execute a build using the resulting router list.
+
+   -f		Filter list using contents of filter.conf.
 
    -p		Perform a git pull before performing the command.
 
@@ -144,7 +177,11 @@ abnew() {
 		fi
 	done
 	# OUTLIST now contains routers with no images built
-	splitecho $OUTLIST
+
+        [ "$FILTER" -eq "0" ] && abfilter "$OUTLIST"
+        # Outlist now filtered if required.
+
+       	splitecho $OUTLIST
 
 	# If execute flag set, execute an autobuild based on the output list.
 	[ "$EXECUTE" -eq "0" ] && abexecute $OUTLIST
@@ -227,6 +264,10 @@ abstale() {
                 fi
         done
         # OUTLIST now contains routers with no images built
+
+        [ "$FILTER" -eq "0" ] && abfilter "$OUTLIST"
+        # Outlist now filtered if required.
+
         splitecho $OUTLIST
 
         # If execute flag set, execute an autobuild based on the output list.
@@ -371,16 +412,18 @@ COMMON=1	# All routers by default
 
 EXECUTE=1	# Do not execute by default.
 PULL=1		# Do not pull by default.
+FILTER=1	# Do not filter by default.
 OUTLIST=""	# Start with blank output list.
 
 # If in a Docker container, echo the command to log
 if [ -f /.dockerenv ] ; then echo "$BASH_SOURCE $*" >> /proc/1/fd/1 ; fi
 
 # Parse input flags.
-while getopts cep flag ; do
+while getopts cefp flag ; do
 	case "${flag}" in
 		c) COMMON=0 ;;
 		e) EXECUTE=0 ;;
+		f) FILTER=0 ;;
 		p) PULL=0 ;;
 		"?") abhelp ;;
 	esac
