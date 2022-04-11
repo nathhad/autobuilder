@@ -182,19 +182,6 @@ else
 	exit 3
 fi
 
-# EDIT: Git pull removed here and moved to management script only,
-# so that user has control of timing of pulls.
-# splitout "Executing git pull."
-# git pull
-
-# if [ "$?" -ne "0" ] ; then
-#	# Git pull failed.
-#	splitout "Git pull failure."
-#	exit 4
-#else
-#	splitout "Git pull successful."
-#fi
-
 # Check if a sequence number was provided, if so store it
 # for use in numbering output files.
 SEQNO=""
