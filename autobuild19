@@ -256,7 +256,7 @@ for ROUTER in $BUILDLIST ; do
 	fi
 
 	let PROGRESS++
-	splitout "($PROGRESS/$TARGETCOUNTx$ERRNUM) Starting on $ROUTER."
+	splitout "($PROGRESS/$TARGETCOUNT, $ERRNUM) Starting on $ROUTER."
 
 	# Prep the BUILDOUTPUT file:
 	echo "____________________" >> $BUILDOUTPUT
