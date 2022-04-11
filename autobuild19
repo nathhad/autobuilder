@@ -145,7 +145,7 @@ success() {
         REMSEC=$(( $REMCOUNT * $SECAVG ))
         SECETA=$(( $(date +%s) + $REMSEC ))
 
-        splitout "Elapsed: $DAYELAPSEDd, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+        splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
 }
 
 ############################
