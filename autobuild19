@@ -139,12 +139,13 @@ success() {
         splitout "$OUTFILE pushed to $SERVEDIR"
         SECCUR=$(date +%s)
         SECELAPSED=$(( $SECCUR - $SECSTART ))
+        DAYELAPSED=$(( $SECELAPSED / 86400 ))
         SECAVG=$(( $SECELAPSED / $PROGRESS ))
         REMCOUNT=$(( $TARGETCOUNT - $PROGRESS ))
         REMSEC=$(( $REMCOUNT * $SECAVG ))
         SECETA=$(( $(date +%s) + $REMSEC ))
 
-        splitout "Elapsed: $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+        splitout "Elapsed: $DAYELAPSEDd, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
 }
 
 ############################
