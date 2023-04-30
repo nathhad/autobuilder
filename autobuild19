@@ -56,6 +56,7 @@ cleanup() {
 	# Removes the pidfile if it's there.
 	[ -e $PIDFILE ] && rm -f $PIDFILE && splitout "Lock file has been removed."
 	[ -f $FLAGFILE ] && rm -f $FLAGFILE
+	echo "Finished $(date)" > $STATFILE
 	splitout "Cleanup completed."
 }
 
@@ -146,6 +147,7 @@ success() {
         SECETA=$(( $(date +%s) + $REMSEC ))
 
         splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+        echo "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)" > $STATFILE
 }
 
 ############################
@@ -170,6 +172,8 @@ echo $$ > $PIDFILE && trap cleanup EXIT
 trap 'break && exit 1' INT TERM
 
 splitout "Lock file set. Pid is $$."
+
+echo "Starting..." > $STATFILE
 
 touch $FLAGFILE
 
