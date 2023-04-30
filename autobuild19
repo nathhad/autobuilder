@@ -173,7 +173,7 @@ trap 'break && exit 1' INT TERM
 
 splitout "Lock file set. Pid is $$."
 
-echo "Starting..." > $STATFILE
+echo "Starting first image at $(date -u)..." > $STATFILE
 
 touch $FLAGFILE
 
