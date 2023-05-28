@@ -56,7 +56,12 @@ cleanup() {
 	# Removes the pidfile if it's there.
 	[ -e $PIDFILE ] && rm -f $PIDFILE && splitout "Lock file has been removed."
 	[ -f $FLAGFILE ] && rm -f $FLAGFILE
-	echo "Finished $(date)" > $STATFILE
+	# Assemble status file line, send to status file
+	STATLINE="Finished $(date)"
+	if [ -n "$ERRLIST" ] ; then
+                STATLINE="$STATLINE, Errors: $ERRLIST"
+        fi
+	echo "$STATLINE" > $STATFILE
 	splitout "Cleanup completed."
 }
 
@@ -147,7 +152,11 @@ success() {
         SECETA=$(( $(date +%s) + $REMSEC ))
 
         splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
-        echo "($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)" > $STATFILE
+        STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+	if [ -n "$ERRLIST" ] ; then
+		STATLINE="$STATLINE, Errors: $ERRLIST"
+	fi
+        echo "$STATLINE" > $STATFILE
 }
 
 ############################
