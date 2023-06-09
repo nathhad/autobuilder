@@ -320,7 +320,9 @@ for ROUTER in $BUILDLIST ; do
 			# build reported a failure the second time.
 			# Document and clean up again.
 			splitout "Clean reuild of $ROUTER failed with result $RESULT. Flushing output images."
-                	if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
+			# New flush method to handle multiple files:
+			DEADFILES=$(ls BUILDDIR/images/*.zip)
+                	if [ -n "$DEADFILES" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared: $DEADFILES" ; fi
                 	ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.rberr.txt"
                 	echo "$ROUTER `date`" > $ERRFILE
                 	echo >> $ERRFILE
