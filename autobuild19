@@ -62,6 +62,8 @@ cleanup() {
                 STATLINE="$STATLINE, Errors: $ERRLIST"
         fi
 	echo "$STATLINE" > $STATFILE
+	# Clean any remaining zips from the images folder.
+	rm -f $BUILDDIR/images/*.zip
 	splitout "Cleanup completed."
 }
 
@@ -118,7 +120,10 @@ success() {
         # Push this image to the server folder.
         # Following line automatically grabs first zip file in images,
         # this should be the only zip file if all is well.
-        OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
+        # OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
+        # Above proved unreliable - use the start of the file name from the json.
+        MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
+        OUTFILE=$(ls "$BUILDDIR/images/$MOD*" | grep ".zip" | head -n 1)
         splitout "Outfile is $OUTFILE"
         if [ -z $OUTFILE ] ; then
                 # Outfile missing!
@@ -271,6 +276,9 @@ for ROUTER in $BUILDLIST ; do
 	let PROGRESS++
 	splitout "($PROGRESS/$TARGETCOUNT, $ERRNUM) Starting on $ROUTER."
 
+	# Remove any stray output files from other router failures.
+	rm -f $BUILDDIR/images/*.zip
+
 	# Prep the BUILDOUTPUT file:
 	echo "____________________" >> $BUILDOUTPUT
 	echo >> $BUILDOUTPUT
@@ -296,7 +304,7 @@ for ROUTER in $BUILDLIST ; do
 	if [ $RESULT -ne "0" ] ; then
 		# build reported a failure on first try. Document and clean up.
 		splitout "Build of $ROUTER failed with result $RESULT. Flushing output images."
-		if [ -f "$BUILDDIR/images/*.zip" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
+		if [ true ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared." ; fi
 		ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.err.txt"
 		echo "$ROUTER `date`" > $ERRFILE
 		echo >> $ERRFILE
@@ -322,7 +330,7 @@ for ROUTER in $BUILDLIST ; do
 			splitout "Clean reuild of $ROUTER failed with result $RESULT. Flushing output images."
 			# New flush method to handle multiple files:
 			DEADFILES=$(ls BUILDDIR/images/*.zip)
-                	if [ -n "$DEADFILES" ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared: $DEADFILES" ; fi
+                	if [ true ] ; then rm -f "$BUILDDIR/images/*.zip" && splitout "Images cleared: $DEADFILES" ; fi
                 	ERRFILE="$AUTODIR/output/$SEQNO.$ROUTER-`date -Idate`.rberr.txt"
                 	echo "$ROUTER `date`" > $ERRFILE
                 	echo >> $ERRFILE
