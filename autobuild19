@@ -123,7 +123,8 @@ success() {
         # OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
         # Above proved unreliable - use the start of the file name from the json.
         MOD=$(jshon -e "$ROUTER" -e mod < $JSON)
-        OUTFILE=$(ls "$BUILDDIR/images/$MOD*" | grep ".zip" | head -n 1)
+        splitout "Model is $MOD"
+        OUTFILE=$(ls "$BUILDDIR/images/" | grep "$MOD" | head -n 1)
         splitout "Outfile is $OUTFILE"
         if [ -z $OUTFILE ] ; then
                 # Outfile missing!
