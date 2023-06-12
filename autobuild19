@@ -122,7 +122,7 @@ success() {
         # this should be the only zip file if all is well.
         # OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
         # Above proved unreliable - use the start of the file name from the json.
-        MOD=$(jshon -F $JSON -e $ROUTER -e mod)
+        MOD=$(jshon -F $JSON -e $ROUTER -e mod | sed 's/"//g')
         splitout "Model is " $MOD
         OUTFILE=$(ls "$BUILDDIR/images/" | grep "$MOD" | head -n 1)
         splitout "Outfile is $OUTFILE"
