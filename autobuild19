@@ -141,7 +141,7 @@ success() {
 
         # Check there are no extra images in the folder left over:
 
-        if [ `ls "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
+        if [ `ls -1 "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
                 # Leftover mystery images! This is basically a crash condition.
                 splitout "Too many images left in folder!"
                 exit 5
@@ -149,6 +149,8 @@ success() {
 
         # Report the success.
         splitout "$OUTFILE pushed to $SERVEDIR"
+
+        # Short term statistics calc:
         SECCUR=$(date +%s)
         SECELAPSED=$(( $SECCUR - $SECSTART ))
         DAYELAPSED=$(( $SECELAPSED / 86400 ))
@@ -157,8 +159,24 @@ success() {
         REMSEC=$(( $REMCOUNT * $SECAVG ))
         SECETA=$(( $(date +%s) + $REMSEC ))
 
+        # Long term statistics calc:
+        IFINISH=$(date -u +%s)
+        IELAPSED=$(( $IFINISH - $ISTART ))
+        ILTAVG=$( jshon -Q -F $STATJSON -e ltavg | sed 's/"//g' )
+        ILTIMG=$( jshon -Q -F $STATJSON -e images | sed 's/"//g' )
+        [ "$ILTIMG" -gt "500" ] && ILTIMG="500"
+        INEWIMG=$(( $ILTIMG + 1 ))
+        IOLDPART=$(echo print $ILTAVG*$ILTIMG/*$INEWIMG | perl)
+        INEWPART=$(echo print $IELAPSED/$INEWIMG | perl)
+        INEWAVG=$(echo print $IOLDPART+$INEWPART | perl)
+        INEWAVG=$(echo "printf(\"%.0f\", $INEWAVG)" | perl)
+        IREMSEC=$(( $REMCOUNT + $INEWAVG ))
+        ISECETA=$(( $(date -u +%s) + $IREMSEC ))
+        # Save the new info to the stats file
+        echo $(jshon -Q -n {} -s $INEWIMG -i images -s $INEWAVG -i ltavg) > $STATJSON
+
         splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
-        STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+        STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date -u -d @$ISECETA)"
 	if [ -n "$ERRLIST" ] ; then
 		STATLINE="$STATLINE, Errors: $ERRLIST"
 	fi
@@ -187,6 +205,12 @@ echo $$ > $PIDFILE && trap cleanup EXIT
 trap 'break && exit 1' INT TERM
 
 splitout "Lock file set. Pid is $$."
+
+# Check if stats.json exists, if not create it with a default value.
+if [ ! -f $STATJSON ] ; then
+	# No statistics record, create a blank one with a default value.
+	echo $(jshon -Q -n {} -s 1 -i images -s 1200 -i ltavg) > stats.json
+fi
 
 echo "Starting first image at $(date -u)..." > $STATFILE
 
@@ -277,7 +301,12 @@ for ROUTER in $BUILDLIST ; do
 	let PROGRESS++
 	splitout "($PROGRESS/$TARGETCOUNT, $ERRNUM) Starting on $ROUTER."
 
+	# Save the current time for stats prep
+	ISTART=$(date -u +%s)
+
 	# Remove any stray output files from other router failures.
+	LISTSTRAY=$(ls -x $BUILDDIR/images/*.zip)
+	if [ -n "$LISTSTRAY" ] ; then splitout "Strays: $LISTSTRAY" ; fi
 	rm -f $BUILDDIR/images/*.zip
 
 	# Prep the BUILDOUTPUT file:

@@ -6,4 +6,5 @@ autobuild19.local.conf
 *.swp
 setupcomplete
 filter.conf
+stats.json
 
