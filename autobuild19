@@ -209,7 +209,7 @@ splitout "Lock file set. Pid is $$."
 # Check if stats.json exists, if not create it with a default value.
 if [ ! -f $STATJSON ] ; then
 	# No statistics record, create a blank one with a default value.
-	echo $(jshon -Q -n {} -s 1 -i images -s 1200 -i ltavg) > stats.json
+	echo $(jshon -Q -n {} -s 1 -i images -s 1200 -i ltavg) > $STATJSON
 fi
 
 echo "Starting first image at $(date -u)..." > $STATFILE
