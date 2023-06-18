@@ -180,7 +180,7 @@ success() {
         splitout "S:$ISTART F:$IFINISH E:$IELAPSED OP:$IOLDPART NP:$INEWPART A:$INEWAVG"
 
         splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Avg: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA -u)"
-        STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Avg: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date d @$ISECETA -u)"
+        STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Avg: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date -d @$ISECETA -u)"
 	if [ -n "$ERRLIST" ] ; then
 		STATLINE="$STATLINE, Errors: $ERRLIST"
 	fi
