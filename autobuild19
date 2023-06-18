@@ -179,7 +179,7 @@ success() {
         echo $(jshon -Q -n {} -s $INEWIMG -i images -s $INEWAVG -i ltavg) > $STATJSON
         splitout "S:$ISTART F:$IFINISH E:$IELAPSED OP:$IOLDPART NP:$INEWPART A:$INEWAVG"
 
-        splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Avg: $(date -d @$SECAVG -u +%H:%M:%S) / LT $(date -d @INEWAVG -u +%H:%M:%S), Finish: $(date -u -d @$SECETA) / LT $(date -u -d @$ISECETA)"
+        splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Avg: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA -u)"
         STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Avg: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date d @$ISECETA -u)"
 	if [ -n "$ERRLIST" ] ; then
 		STATLINE="$STATLINE, Errors: $ERRLIST"
