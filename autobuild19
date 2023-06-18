@@ -166,7 +166,7 @@ success() {
         ILTIMG=$( jshon -Q -F $STATJSON -e images | sed 's/"//g' )
         [ "$ILTIMG" -gt "500" ] && ILTIMG="500"
         INEWIMG=$(( $ILTIMG + 1 ))
-        IOLDPART=$(echo print $ILTAVG*$ILTIMG/*$INEWIMG | perl)
+        IOLDPART=$(echo print $ILTAVG*$ILTIMG/$INEWIMG | perl)
         INEWPART=$(echo print $IELAPSED/$INEWIMG | perl)
         INEWAVG=$(echo print $IOLDPART+$INEWPART | perl)
         INEWAVG=$(echo "printf(\"%.0f\", $INEWAVG)" | perl)
@@ -174,6 +174,7 @@ success() {
         ISECETA=$(( $(date -u +%s) + $IREMSEC ))
         # Save the new info to the stats file
         echo $(jshon -Q -n {} -s $INEWIMG -i images -s $INEWAVG -i ltavg) > $STATJSON
+        splitout "S:$ISTART F:$IFINISH E:$IELAPSED OP:$IOLDPART NP:$INEWPART A:$INEWAVG"
 
         splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
         STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date -u -d @$ISECETA)"
