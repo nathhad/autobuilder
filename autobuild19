@@ -123,7 +123,7 @@ success() {
         # OUTFILE=`ls "$BUILDDIR/images/" | grep ".zip" | head -n 1`
         # Above proved unreliable - use the start of the file name from the json.
         MOD=$(jshon -F $JSON -e $ROUTER -e mod | sed 's/"//g')
-        splitout "Model is " $MOD
+        splitout "Model is $MOD (pretty name)."
         OUTFILE=$(ls "$BUILDDIR/images/" | grep "$MOD" | head -n 1)
         splitout "Outfile is $OUTFILE"
         if [ -z $OUTFILE ] ; then
@@ -144,7 +144,10 @@ success() {
         if [ `ls -1 "$BUILDDIR/images/" | grep ".zip" | wc -l` -gt "0" ] ; then
                 # Leftover mystery images! This is basically a crash condition.
                 splitout "Too many images left in folder!"
-                exit 5
+                splitout "Extras: $(ls -x "$BUILDDIR/images/*.zip")
+                # exit 5
+                # Clean up.
+                rm -f $BUILDDIR/images/*.zip
         fi
 
         # Report the success.
@@ -176,7 +179,7 @@ success() {
         echo $(jshon -Q -n {} -s $INEWIMG -i images -s $INEWAVG -i ltavg) > $STATJSON
         splitout "S:$ISTART F:$IFINISH E:$IELAPSED OP:$IOLDPART NP:$INEWPART A:$INEWAVG"
 
-        splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S), Finish: $(date -d @$SECETA)"
+        splitout "Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$SECAVG -u +%H:%M:%S) / LT $(date -d @INEWAVG -u +%H:%M:%S), Finish: $(date -u -d @$SECETA) / LT $(date -u -d @$ISECETA)"
         STATLINE="($PROGRESS/$TARGETCOUNT, $ERRNUM) Elapsed: $DAYELAPSED d, $(date -d @$SECELAPSED -u +%H:%M:%S), Average: $(date -d @$INEWAVG -u +%H:%M:%S), Finish: $(date -u -d @$ISECETA)"
 	if [ -n "$ERRLIST" ] ; then
 		STATLINE="$STATLINE, Errors: $ERRLIST"
