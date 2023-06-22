@@ -173,7 +173,7 @@ success() {
         INEWPART=$(echo print $IELAPSED/$INEWIMG | perl)
         INEWAVG=$(echo print $IOLDPART+$INEWPART | perl)
         INEWAVG=$(echo "printf(\"%.0f\", $INEWAVG)" | perl)
-        IREMSEC=$(( $REMCOUNT + $INEWAVG ))
+        IREMSEC=$(( $REMCOUNT * $INEWAVG ))
         ISECETA=$(( $(date -u +%s) + $IREMSEC ))
         # Save the new info to the stats file
         echo $(jshon -Q -n {} -s $INEWIMG -i images -s $INEWAVG -i ltavg) > $STATJSON
