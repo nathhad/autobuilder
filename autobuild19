@@ -393,6 +393,6 @@ done
 splitout "Build loop $SEQNO has finished at `date`!"
 splitout "Final buildlist: $BUILDLIST"
 splitout "$ERRNUM unrecoverable errors: $ERRLIST"
-if [ $RBLIST != "" ] ; then
+if [ -n "$RBLIST" ] ; then
 	splitout "Clean rebuilds performed: $RBLIST"
 fi
