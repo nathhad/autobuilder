@@ -309,9 +309,12 @@ for ROUTER in $BUILDLIST ; do
 	ISTART=$(date -u +%s)
 
 	# Remove any stray output files from other router failures.
-	LISTSTRAY=$(ls -x $BUILDDIR/images/*.zip)
-	if [ -n "$LISTSTRAY" ] ; then splitout "Strays: $LISTSTRAY" ; fi
-	rm -f $BUILDDIR/images/*.zip
+	if [ -f "$BUILDDIR/images/*.zip" ] ; then
+		# Put this in an if because next command will error if no strays
+		LISTSTRAY=$(ls -x $BUILDDIR/images/*.zip)
+		if [ -n "$LISTSTRAY" ] ; then splitout "Strays: $LISTSTRAY" ; fi
+		rm -f $BUILDDIR/images/*.zip
+	fi
 
 	# Prep the BUILDOUTPUT file:
 	echo "____________________" >> $BUILDOUTPUT
