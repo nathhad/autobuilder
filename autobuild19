@@ -184,6 +184,9 @@ success() {
 	if [ -n "$ERRLIST" ] ; then
 		STATLINE="$STATLINE, Errors: $ERRLIST"
 	fi
+	if [ -n "$RBLIST" ] ; then
+		STATLINE="$STATLINE, Rebuilds: $RBLIST"
+	fi
         echo "$STATLINE" > $STATFILE
 }
 
