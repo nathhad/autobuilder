@@ -5,8 +5,8 @@
 # allows for triggering it from outside a container.
 
 # The script assumes you're already on a branch you want to be on.
+# Use the -w /build/autobuild working directory if you're scripting
+# the docker container to get into the right place.
 
-source autobuild19.conf
-cd "$AUTODIR"
 git pull -q --ff-only
 
