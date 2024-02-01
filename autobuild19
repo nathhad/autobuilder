@@ -61,6 +61,9 @@ cleanup() {
 	if [ -n "$ERRLIST" ] ; then
                 STATLINE="$STATLINE, Errors: $ERRLIST"
         fi
+        if [ -n "$RBLIST" ] ; then
+        	STATLINE="$STATLINE, Rebuilds: $RBLIST"
+        fi
 	echo "$STATLINE" > $STATFILE
 	# Clean any remaining zips from the images folder.
 	rm -f $BUILDDIR/images/*.zip
