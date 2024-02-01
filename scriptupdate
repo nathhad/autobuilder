@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Update the autobuilder script from the git.
+# Simple operation, automated here because it
+# allows for triggering it from outside a container.
+
+# The script assumes you're already on a branch you want to be on.
+
+source autobuild19.conf
+cd "$AUTODIR"
+git pull -q --ff-only
+
