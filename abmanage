@@ -419,6 +419,7 @@ abtime() {
 	LASTDIR=$(pwd)
 	cd "$BUILDDIR"
 	LASTCOMMIT=$(git show --format=%ct HEAD | head -n 1)
+	LASTCOMMIT=$(echo "$LASTCOMMIT" | tr -d '\r')
 	echo "$LASTCOMMIT"
 	cd "$LASTDIR"
 }
