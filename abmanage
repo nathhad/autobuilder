@@ -158,6 +158,9 @@ Commands:
    		prune action. Listed routers will be moved to
    		the trash directory in the conf file.
 
+   TIME		Return the number of seconds since the last commit
+   		was made to the source build system
+
 EndOfHelp
 exit 1
 }
@@ -408,6 +411,19 @@ abstray() {
         splitecho "Cleaned up $COUNT stray files: $OUTLIST"
 }
 
+abtime() {
+	# Return the time in seconds since the last git commit.
+        # Error out if an execute flag was passed:
+        [ "$EXECUTE" -eq "0" ] && splitecho "TIME command does not support -e flag." && abhelp
+
+	# NOW=$(date -d "7 days ago" +%s)
+	LASTDIR=$(pwd)
+	cd "$BUILDDIR"
+	LASTCOMMIT=$(git show --format=%ct HEAD | head -n 1)
+	echo "$LASTCOMMIT"
+}
+
+
 COMMON=1	# All routers by default
 
 EXECUTE=1	# Do not execute by default.
@@ -484,6 +500,7 @@ case "${1^^}" in
 	STATUS) abstatus ;;
 	STRAY) abstray ;;
 	STOP) abstop ;;
+	TIME) abtime ;;
 	*) abhelp ;;
 esac
 
