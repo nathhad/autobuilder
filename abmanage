@@ -416,11 +416,11 @@ abtime() {
         # Error out if an execute flag was passed:
         [ "$EXECUTE" -eq "0" ] && splitecho "TIME command does not support -e flag." && abhelp
 
-	# NOW=$(date -d "7 days ago" +%s)
 	LASTDIR=$(pwd)
 	cd "$BUILDDIR"
 	LASTCOMMIT=$(git show --format=%ct HEAD | head -n 1)
 	echo "$LASTCOMMIT"
+	cd "$LASTDIR"
 }
 
 
