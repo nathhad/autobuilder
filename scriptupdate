@@ -8,5 +8,6 @@
 # Use the -w /build/autobuild working directory if you're scripting
 # the docker container to get into the right place.
 
+cd /build/autobuild
 git pull -q --ff-only
 
